@@ -2,6 +2,7 @@
 __pycache__
 venv
 .env
+.env_1
 db.sqlite3
 /migrations
 /src/migrations/
