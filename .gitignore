@@ -1,0 +1,13 @@
+.idea
+__pycache__
+venv
+.env
+db.sqlite3
+/migrations
+/src/migrations/
+/migrations/
+.vscode
+settings.json
+launch.json
+.pylintrc
+/media
