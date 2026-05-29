@@ -1,130 +1,205 @@
-(function() {
-    let capexYears = [];
-    function initCapexYears() {
-        const startYear = 2026;
-        const custom = {2026:{wout:8,w:5,rnd:5,balance:5},2027:{wout:5,w:6,rnd:3,balance:6},2028:{wout:5,w:4,rnd:2,balance:1},2029:{wout:5,w:0,rnd:2,balance:2},2030:{wout:5,w:0,rnd:0,balance:0},2031:{wout:5,w:0,rnd:0,balance:0},2032:{wout:5,w:0,rnd:1,balance:0}};
-        const usefulLife = +document.getElementById('useful_life').value || 30;
-        const maxYear = Math.max(2032, startYear + usefulLife + 5);
-        capexYears = [];
-        for (let y = startYear; y <= maxYear; y++) {
-            if (custom[y]) capexYears.push({ year: y, capex_without: custom[y].wout, capex_with: custom[y].w, rnd: custom[y].rnd, balance: custom[y].balance });
-            else capexYears.push({ year: y, capex_without: 0, capex_with: 0, rnd: 0, balance: 0 });
+// Форматирование чисел с пробелами
+function formatNumberWithSpaces(num, decimals = 0) {
+    if (num === undefined || num === null || isNaN(num)) num = 0;
+    if (decimals > 0) {
+        let fixed = num.toFixed(decimals);
+        let parts = fixed.split('.');
+        parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+        return parts.join('.');
+    } else {
+        return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    }
+}
+
+let capexYears = [];
+
+function initCapexYears() {
+    const startYear = 2026;
+    const custom = {
+        2026: { wout: 5, w: 5, rnd: 5 },
+        2027: { wout: 5, w: 6, rnd: 3 },
+        2028: { wout: 5, w: 4, rnd: 2 },
+        2029: { wout: 5, w: 0, rnd: 2 },
+        2030: { wout: 5, w: 0, rnd: 0 },
+        2031: { wout: 5, w: 0, rnd: 0 },
+        2032: { wout: 5, w: 0, rnd: 1 }
+    };
+    const usefulLife = +document.getElementById('useful_life').value || 30;
+    const maxYear = Math.max(2032, startYear + usefulLife + 5);
+    capexYears = [];
+    for (let y = startYear; y <= maxYear; y++) {
+        if (custom[y]) {
+            capexYears.push({ year: y, capex_without: custom[y].wout, capex_with: custom[y].w, rnd: custom[y].rnd });
+        } else {
+            capexYears.push({ year: y, capex_without: 0, capex_with: 0, rnd: 0 });
         }
-        renderCapexForm();
     }
-    function renderCapexForm() {
-        const container = document.getElementById('capexDynamicList');
-        if (!container) return;
-        container.innerHTML = '';
-        capexYears.forEach((item, idx) => {
-            const inc = (item.capex_with - item.capex_without) + item.rnd;
-            const total = item.capex_with + item.rnd;
-            const div = document.createElement('div');
-            div.className = 'capex-row';
-            div.innerHTML = `
-                <div class="capex-year">${item.year}</div>
-                <div class="capex-field"><label>КВ "без"</label><input type="number" step="0.5" value="${item.capex_without}" class="capex-without-input" data-idx="${idx}"></div>
-                <div class="capex-field"><label>КВ "с"</label><input type="number" step="0.5" value="${item.capex_with}" class="capex-with-input" data-idx="${idx}"></div>
-                <div class="capex-field"><label>НИОКР</label><input type="number" step="0.5" value="${item.rnd}" class="capex-rnd-input" data-idx="${idx}"></div>
-                <div class="capex-field"><label>Постановка на баланс</label><input type="number" step="0.5" value="${item.balance}" class="capex-balance-input" data-idx="${idx}"></div>
-                <div class="capex-field"><label>Изменение КВ</label><div class="readonly-field" id="inc_disp_${idx}">${inc.toFixed(2)}</div></div>
-                <div class="capex-field"><label>КВ+НИОКР</label><div class="readonly-field" id="totalrnd_disp_${idx}">${total.toFixed(2)}</div></div>
-            `;
-            container.appendChild(div);
-        });
-        document.querySelectorAll('.capex-without-input').forEach(inp => inp.addEventListener('change', (e) => { let idx = +e.target.dataset.idx; capexYears[idx].capex_without = +e.target.value || 0; refreshRowDisplay(idx); fullRefresh(); }));
-        document.querySelectorAll('.capex-with-input').forEach(inp => inp.addEventListener('change', (e) => { let idx = +e.target.dataset.idx; capexYears[idx].capex_with = +e.target.value || 0; refreshRowDisplay(idx); fullRefresh(); }));
-        document.querySelectorAll('.capex-rnd-input').forEach(inp => inp.addEventListener('change', (e) => { let idx = +e.target.dataset.idx; capexYears[idx].rnd = +e.target.value || 0; refreshRowDisplay(idx); fullRefresh(); }));
-        document.querySelectorAll('.capex-balance-input').forEach(inp => inp.addEventListener('change', (e) => { let idx = +e.target.dataset.idx; capexYears[idx].balance = +e.target.value || 0; fullRefresh(); }));
-        updateCapexTotals();
-    }
-    function refreshRowDisplay(idx) {
-        const item = capexYears[idx];
+    renderCapexForm();
+}
+
+function renderCapexForm() {
+    const container = document.getElementById('capexDynamicList');
+    if (!container) return;
+    container.innerHTML = '';
+    capexYears.forEach((item, idx) => {
+        const balanceVal = item.capex_with + item.rnd;
         const inc = (item.capex_with - item.capex_without) + item.rnd;
         const total = item.capex_with + item.rnd;
-        const incDiv = document.getElementById(`inc_disp_${idx}`);
-        const totalDiv = document.getElementById(`totalrnd_disp_${idx}`);
-        if (incDiv) incDiv.innerText = inc.toFixed(2);
-        if (totalDiv) totalDiv.innerText = total.toFixed(2);
-    }
-    function updateCapexTotals() {
-        let sumWithout = capexYears.reduce((s,i)=>s+i.capex_without,0);
-        let sumWith = capexYears.reduce((s,i)=>s+i.capex_with,0);
-        let sumRnd = capexYears.reduce((s,i)=>s+i.rnd,0);
-        let totalInc = capexYears.reduce((s,i)=>s+(i.capex_with - i.capex_without)+i.rnd,0);
-        let totalWithRnd = sumWith + sumRnd;
-        document.getElementById('capex_without_total').value = sumWithout.toFixed(2);
-        document.getElementById('capex_with_total').value = sumWith.toFixed(2);
-        document.getElementById('rnd_total_display').value = sumRnd.toFixed(2);
-        document.getElementById('total_incremental').value = totalInc.toFixed(2);
-        document.getElementById('total_with_rnd').value = totalWithRnd.toFixed(2);
-    }
-    function computeEffects() {
-        let obs = (+document.getElementById('obs_time').value||0) * (+document.getElementById('fuel_cost').value||0) * 2 * (+document.getElementById('speed_kmh').value||0) * (+document.getElementById('fuel_consumption').value||0.08);
-        document.getElementById('obs_effect_display').value = obs.toFixed(2);
-        let topo = (+document.getElementById('topo_cost_per_km').value||0) * (+document.getElementById('topo_km_reduce').value||0);
-        document.getElementById('topo_effect_display').value = topo.toFixed(2);
-        let tech = (+document.getElementById('tech_rate').value||0) * ((+document.getElementById('tech_loss_before').value||0) - (+document.getElementById('tech_loss_after').value||0));
-        document.getElementById('tech_effect_display').value = tech.toFixed(2);
-        let com = (+document.getElementById('com_rate').value||0) * ((+document.getElementById('com_loss_before').value||0) - (+document.getElementById('com_loss_after').value||0));
-        document.getElementById('com_effect_display').value = com.toFixed(2);
-        let supply = ((+document.getElementById('supply_after').value||0) - (+document.getElementById('supply_before').value||0)) * (+document.getElementById('tariff_supply').value||0);
-        document.getElementById('supply_effect_display').value = supply.toFixed(2);
-        let acc = ((+document.getElementById('acc_before').value||0) - (+document.getElementById('acc_after').value||0)) * (+document.getElementById('acc_cost').value||0);
-        document.getElementById('acc_effect_display').value = acc.toFixed(2);
-        let nvos = (+document.getElementById('nvos_before').value||0) - (+document.getElementById('nvos_after').value||0);
-        document.getElementById('nvos_effect_display').value = nvos.toFixed(2);
-        let royalty = (+document.getElementById('royalty_base').value||0) * (+document.getElementById('royalty_rate').value||0) / 100;
-        document.getElementById('royalty_effect_display').value = royalty.toFixed(2);
-        let opex = (+document.getElementById('opex_before').value||0) - (+document.getElementById('opex_after').value||0);
-        document.getElementById('opex_change_display').value = opex.toFixed(2);
-        return { obs, topo, tech, com, supply, acc, nvos, royalty, opexChange: opex };
-    }
-    function getBalanceSchedules() {
-        const usefulLife = +document.getElementById('useful_life').value || 30;
-        let placements = capexYears.filter(c => c.balance > 0).map(c => ({ year: c.year, amount: c.balance }));
-        let minYear = Math.min(...capexYears.map(c=>c.year), ...placements.map(p=>p.year));
-        let maxYear = Math.max(...capexYears.map(c=>c.year), ...placements.map(p=>p.year+usefulLife));
-        let years = []; for (let y=minYear; y<=maxYear; y++) years.push(y);
-        let residualStart = new Map(), annualDepr = new Map();
-        years.forEach(y => { residualStart.set(y,0); annualDepr.set(y,0); });
-        for (let p of placements) {
-            let amount = p.amount, startYear = p.year, deprPerYear = amount/usefulLife;
-            residualStart.set(startYear, (residualStart.get(startYear)||0) + amount);
-            for (let i=1; i<=usefulLife; i++) {
-                let yr = startYear + i;
-                if (yr <= maxYear) {
-                    annualDepr.set(yr, (annualDepr.get(yr)||0) + deprPerYear);
-                    residualStart.set(yr, (residualStart.get(yr)||0) + (amount - deprPerYear*i));
-                }
+        const div = document.createElement('div');
+        div.className = 'capex-row';
+        div.innerHTML = `
+            <div class="capex-year">${item.year}</div>
+            <div class="capex-field"><label>КВ "без"</label><input type="number" step="0.5" value="${item.capex_without}" class="capex-without-input" data-idx="${idx}"></div>
+            <div class="capex-field"><label>КВ "с"</label><input type="number" step="0.5" value="${item.capex_with}" class="capex-with-input" data-idx="${idx}"></div>
+            <div class="capex-field"><label>НИОКР</label><input type="number" step="0.5" value="${item.rnd}" class="capex-rnd-input" data-idx="${idx}"></div>
+            <div class="capex-field"><label>Постановка на баланс</label><div class="readonly-field">${formatNumberWithSpaces(balanceVal, 2)}</div></div>
+            <div class="capex-field"><label>Изменение КВ</label><div class="readonly-field" id="inc_disp_${idx}">${formatNumberWithSpaces(inc, 2)}</div></div>
+            <div class="capex-field"><label>КВ+НИОКР</label><div class="readonly-field" id="totalrnd_disp_${idx}">${formatNumberWithSpaces(total, 2)}</div></div>
+        `;
+        container.appendChild(div);
+    });
+    document.querySelectorAll('.capex-without-input').forEach(inp => inp.addEventListener('change', (e) => {
+        let idx = +e.target.dataset.idx;
+        capexYears[idx].capex_without = +e.target.value || 0;
+        refreshRowDisplay(idx);
+        fullRefresh();
+    }));
+    document.querySelectorAll('.capex-with-input').forEach(inp => inp.addEventListener('change', (e) => {
+        let idx = +e.target.dataset.idx;
+        capexYears[idx].capex_with = +e.target.value || 0;
+        refreshRowDisplay(idx);
+        fullRefresh();
+    }));
+    document.querySelectorAll('.capex-rnd-input').forEach(inp => inp.addEventListener('change', (e) => {
+        let idx = +e.target.dataset.idx;
+        capexYears[idx].rnd = +e.target.value || 0;
+        refreshRowDisplay(idx);
+        fullRefresh();
+    }));
+    updateCapexTotals();
+}
+
+function refreshRowDisplay(idx) {
+    const item = capexYears[idx];
+    const inc = (item.capex_with - item.capex_without) + item.rnd;
+    const total = item.capex_with + item.rnd;
+    const incDiv = document.getElementById(`inc_disp_${idx}`);
+    const totalDiv = document.getElementById(`totalrnd_disp_${idx}`);
+    if (incDiv) incDiv.innerText = formatNumberWithSpaces(inc, 2);
+    if (totalDiv) totalDiv.innerText = formatNumberWithSpaces(total, 2);
+    const balanceDiv = document.querySelector(`.capex-row:has(.capex-year:contains('${item.year}')) .capex-field:has(label:contains('Постановка')) .readonly-field`);
+    if (balanceDiv) balanceDiv.innerText = formatNumberWithSpaces(item.capex_with + item.rnd, 2);
+}
+
+function updateCapexTotals() {
+    let sumWithout = capexYears.reduce((s, i) => s + i.capex_without, 0);
+    let sumWith = capexYears.reduce((s, i) => s + i.capex_with, 0);
+    let sumRnd = capexYears.reduce((s, i) => s + i.rnd, 0);
+    let totalInc = capexYears.reduce((s, i) => s + (i.capex_with - i.capex_without) + i.rnd, 0);
+    let totalWithRnd = sumWith + sumRnd;
+    document.getElementById('capex_without_total').value = formatNumberWithSpaces(sumWithout, 2);
+    document.getElementById('capex_with_total').value = formatNumberWithSpaces(sumWith, 2);
+    document.getElementById('rnd_total_display').value = formatNumberWithSpaces(sumRnd, 2);
+    document.getElementById('total_incremental').value = formatNumberWithSpaces(totalInc, 2);
+    document.getElementById('total_with_rnd').value = formatNumberWithSpaces(totalWithRnd, 2);
+}
+
+function computeEffects() {
+    let obs = (+document.getElementById('obs_time').value || 0) * (+document.getElementById('fuel_cost').value || 0) * 2 * (+document.getElementById('speed_kmh').value || 0) * (+document.getElementById('fuel_consumption').value || 0.08);
+    document.getElementById('obs_effect_display').value = formatNumberWithSpaces(obs, 0);
+    let topo = (+document.getElementById('topo_cost_per_km').value || 0) * (+document.getElementById('topo_km_reduce').value || 0);
+    document.getElementById('topo_effect_display').value = formatNumberWithSpaces(topo, 0);
+    let tech = (+document.getElementById('tech_rate').value || 0) * ((+document.getElementById('tech_loss_before').value || 0) - (+document.getElementById('tech_loss_after').value || 0));
+    document.getElementById('tech_effect_display').value = formatNumberWithSpaces(tech, 0);
+    let com = (+document.getElementById('com_rate').value || 0) * ((+document.getElementById('com_loss_before').value || 0) - (+document.getElementById('com_loss_after').value || 0));
+    document.getElementById('com_effect_display').value = formatNumberWithSpaces(com, 0);
+    let supply = ((+document.getElementById('supply_after').value || 0) - (+document.getElementById('supply_before').value || 0)) * (+document.getElementById('tariff_supply').value || 0);
+    document.getElementById('supply_effect_display').value = formatNumberWithSpaces(supply, 0);
+    let acc = ((+document.getElementById('acc_before').value || 0) - (+document.getElementById('acc_after').value || 0)) * (+document.getElementById('acc_cost').value || 0);
+    document.getElementById('acc_effect_display').value = formatNumberWithSpaces(acc, 0);
+    let nvos = (+document.getElementById('nvos_before').value || 0) - (+document.getElementById('nvos_after').value || 0);
+    document.getElementById('nvos_effect_display').value = formatNumberWithSpaces(nvos, 0);
+    let royalty = (+document.getElementById('royalty_base').value || 0) * (+document.getElementById('royalty_rate').value || 0) / 100;
+    document.getElementById('royalty_effect_display').value = formatNumberWithSpaces(royalty, 0);
+    let opex = (+document.getElementById('opex_before').value || 0) - (+document.getElementById('opex_after').value || 0);
+    document.getElementById('opex_change_display').value = formatNumberWithSpaces(opex, 0);
+    return { obs, topo, tech, com, supply, acc, nvos, royalty, opexChange: opex };
+}
+
+function updateSummary() {
+    const getRaw = (id) => +(document.getElementById(id)?.value?.replace(/\s/g, '') || 0);
+    const obs = getRaw('obs_effect_display');
+    const topo = getRaw('topo_effect_display');
+    const tech = getRaw('tech_effect_display');
+    const com = getRaw('com_effect_display');
+    const supply = getRaw('supply_effect_display');
+    const acc = getRaw('acc_effect_display');
+    const nvos = getRaw('nvos_effect_display');
+    const royalty = getRaw('royalty_effect_display');
+    const opex = getRaw('opex_change_display');
+    const totalRub = obs + topo + tech + com + supply + acc + nvos + royalty + opex;
+    const totalMln = totalRub / 1e6;
+    document.getElementById('totalEffectRub').innerText = formatNumberWithSpaces(totalRub, 0);
+    document.getElementById('totalEffectMln').innerText = formatNumberWithSpaces(totalMln, 2);
+    return { obs, topo, tech, com, supply, acc, nvos, royalty, opex, totalRub };
+}
+
+function getBalanceSchedules() {
+    const usefulLife = +document.getElementById('useful_life').value || 30;
+    let placements = capexYears.filter(c => (c.capex_with + c.rnd) > 0).map(c => ({ year: c.year, amount: c.capex_with + c.rnd }));
+    let minYear = Math.min(...capexYears.map(c => c.year), ...placements.map(p => p.year));
+    let maxYear = Math.max(...capexYears.map(c => c.year), ...placements.map(p => p.year + usefulLife));
+    let years = [];
+    for (let y = minYear; y <= maxYear; y++) years.push(y);
+    let residualStart = new Map(), annualDepr = new Map();
+    years.forEach(y => { residualStart.set(y, 0); annualDepr.set(y, 0); });
+    for (let p of placements) {
+        let amount = p.amount, startYear = p.year, deprPerYear = amount / usefulLife;
+        residualStart.set(startYear, (residualStart.get(startYear) || 0) + amount);
+        for (let i = 1; i <= usefulLife; i++) {
+            let yr = startYear + i;
+            if (yr <= maxYear) {
+                annualDepr.set(yr, (annualDepr.get(yr) || 0) + deprPerYear);
+                residualStart.set(yr, (residualStart.get(yr) || 0) + (amount - deprPerYear * i));
             }
         }
-        let yearsList=[], residualVals=[], deprVals=[];
-        for (let y of years) { yearsList.push(y); residualVals.push(residualStart.get(y)||0); deprVals.push(annualDepr.get(y)||0); }
-        return { years: yearsList, residualValues: residualVals, deprValues: deprVals };
     }
-    let amortChart = null, propTaxChart = null;
-    let netChart=null, cumChart=null, operChart=null, invChart=null;
-    function getChartColors() {
-        const isDark = document.body.classList.contains('dark');
-        return {
-            accent: isDark ? '#34c97a' : '#1f7b4d',
-            orange: '#f0a74b',
-            blue: '#2c7eb6',
-            bgFill: isDark ? 'rgba(52,201,122,0.1)' : 'rgba(31,123,77,0.05)',
-            grid: isDark ? '#2d3543' : '#e2e8f0',
-            text: isDark ? '#eef2ff' : '#1a2c3e',
-            secText: isDark ? '#9aa8bf' : '#4a5b6e'
-        };
+    let yearsList = [], residualVals = [], deprVals = [];
+    for (let y of years) {
+        yearsList.push(y);
+        residualVals.push(residualStart.get(y) || 0);
+        deprVals.push(annualDepr.get(y) || 0);
     }
-    function updateAmortization() {
-        const { years, residualValues, deprValues } = getBalanceSchedules();
-        const tbody = document.querySelector('#amortTable tbody');
-        if (tbody) {
-            tbody.innerHTML = '';
-            for (let i=0; i<years.length; i++) tbody.innerHTML += `<tr><td>${years[i]}</td><td>${residualValues[i].toFixed(2)}</td><td>${deprValues[i].toFixed(2)}</td></tr>`;
+    return { years: yearsList, residualValues: residualVals, deprValues: deprVals };
+}
+
+let amortChart = null, propTaxChart = null;
+let netChart = null, cumChart = null, operChart = null, invChart = null, donutChart = null, capexBarsChart = null, discountedCFChart = null, compareCapexChart = null;
+
+function getChartColors() {
+    const isDark = document.body.classList.contains('dark');
+    return {
+        accent: isDark ? '#34c97a' : '#1f7b4d',
+        orange: '#f0a74b',
+        blue: '#2c7eb6',
+        bgFill: isDark ? 'rgba(52,201,122,0.1)' : 'rgba(31,123,77,0.05)',
+        grid: isDark ? '#2d3543' : '#e2e8f0',
+        text: isDark ? '#eef2ff' : '#1a2c3e',
+        secText: isDark ? '#9aa8bf' : '#4a5b6e'
+    };
+}
+
+function updateAmortization() {
+    const { years, residualValues, deprValues } = getBalanceSchedules();
+    const tbody = document.querySelector('#amortTable tbody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        for (let i = 0; i < years.length; i++) {
+            tbody.innerHTML += `<tr><td>${years[i]}</td><td>${formatNumberWithSpaces(residualValues[i], 2)}</td><td>${formatNumberWithSpaces(deprValues[i], 2)}</td></tr>`;
         }
-        const ctx = document.getElementById('amortChart').getContext('2d');
+    }
+    const ctx = document.getElementById('amortChart')?.getContext('2d');
+    if (ctx) {
         if (amortChart) amortChart.destroy();
         const clr = getChartColors();
         amortChart = new Chart(ctx, {
@@ -133,7 +208,7 @@
                 labels: years,
                 datasets: [
                     { label: 'Остаточная стоимость (млн руб)', data: residualValues, borderColor: clr.accent, tension: 0.2, fill: false, yAxisID: 'y' },
-                    { label: 'Амортизация (млн руб)', data: deprValues, borderColor: clr.orange, borderDash: [5,5], fill: false, yAxisID: 'y1' }
+                    { label: 'Амортизация (млн руб)', data: deprValues, borderColor: clr.orange, borderDash: [5, 5], fill: false, yAxisID: 'y1' }
                 ]
             },
             options: {
@@ -146,22 +221,28 @@
             }
         });
     }
-    function updatePropTax() {
-        const { years, residualValues } = getBalanceSchedules();
-        const propRate = (+document.getElementById('prop_tax_rate').value||2.2)/100;
-        let rows=[], taxVals=[], yearList=[];
-        for (let i=0; i<years.length-1; i++) {
-            let start=residualValues[i], end=residualValues[i+1], avg=(start+end)/2, tax=avg*propRate;
-            rows.push({year:years[i], start, avg, tax});
-            yearList.push(years[i]); taxVals.push(tax);
-        }
-        const tbody = document.querySelector('#propTaxTable tbody');
-        if (tbody) {
-            tbody.innerHTML = '';
-            rows.forEach(r => { tbody.innerHTML += `<tr><td>${r.year}</td><td>${r.start.toFixed(2)}</td><td>${r.avg.toFixed(2)}</td><td>${r.tax.toFixed(2)}</td></tr>`; });
-        }
+}
+
+function updatePropTax() {
+    const { years, residualValues } = getBalanceSchedules();
+    const propRate = (+document.getElementById('prop_tax_rate').value || 2.2) / 100;
+    let rows = [], taxVals = [], yearList = [];
+    for (let i = 0; i < years.length - 1; i++) {
+        let start = residualValues[i], end = residualValues[i + 1], avg = (start + end) / 2, tax = avg * propRate;
+        rows.push({ year: years[i], start, avg, tax });
+        yearList.push(years[i]);
+        taxVals.push(tax);
+    }
+    const tbody = document.querySelector('#propTaxTable tbody');
+    if (tbody) {
+        tbody.innerHTML = '';
+        rows.forEach(r => {
+            tbody.innerHTML += `<tr><td>${r.year}</td><td>${formatNumberWithSpaces(r.start, 2)}</td><td>${formatNumberWithSpaces(r.avg, 2)}</td><td>${formatNumberWithSpaces(r.tax, 2)}</td></tr>`;
+        });
+    }
+    const ctx = document.getElementById('propTaxChart')?.getContext('2d');
+    if (ctx) {
         if (propTaxChart) propTaxChart.destroy();
-        const ctx = document.getElementById('propTaxChart').getContext('2d');
         const clr = getChartColors();
         propTaxChart = new Chart(ctx, {
             type: 'line',
@@ -173,143 +254,230 @@
             }
         });
     }
-    function calculateCashFlows() {
-        const effects = computeEffects();
-        const annualBenefit = (effects.obs+effects.topo+effects.tech+effects.com+effects.supply+effects.acc+effects.nvos+effects.royalty+effects.opexChange) / 1e6;
-        const profitTax = (+document.getElementById('profit_tax_rate').value||25)/100;
-        const propTaxRate = (+document.getElementById('prop_tax_rate').value||2.2)/100;
-        const discount = (+document.getElementById('discount_rate').value||14)/100;
-        const baseYear = +document.getElementById('base_year').value||2027;
-        const benefitStart = +document.getElementById('benefit_start_year').value||2026;
-        const usefulLife = +document.getElementById('useful_life').value||30;
-        const projectStart = +document.getElementById('project_start').value||2026;
-        let incInv = {};
-        capexYears.forEach(c => { incInv[c.year] = (c.capex_with - c.capex_without) + c.rnd; });
-        const { years, residualValues, deprValues } = getBalanceSchedules();
-        const minY = Math.min(...years, ...Object.keys(incInv).map(Number));
-        const maxY = Math.max(...years, ...Object.keys(incInv).map(Number), benefitStart+usefulLife+2);
-        let allYears = []; for (let y=minY; y<=maxY; y++) allYears.push(y);
-        let deprMap=new Map(), resMap=new Map();
-        for (let i=0; i<years.length; i++) { deprMap.set(years[i], deprValues[i]); resMap.set(years[i], residualValues[i]); }
-        let cashflows=[], cumulative=0, discCum=0, discFlows=[];
-        for (let idx=0; idx<allYears.length; idx++) {
-            let y = allYears[idx];
-            let active = y >= benefitStart;
-            let operIncome = active ? annualBenefit : 0;
-            let depr = deprMap.get(y)||0;
-            let nbv = resMap.get(y)||0;
-            let nextNbv = resMap.get(y+1)||0;
-            let avgVal = (nbv+nextNbv)/2;
-            let propTax = (active && nbv>0) ? avgVal*propTaxRate : 0;
-            let profitBeforeTax = operIncome - depr - propTax;
-            let incomeTax = profitBeforeTax>0 ? profitBeforeTax*profitTax : 0;
-            let ocf = operIncome - propTax - incomeTax;
-            let inv = -(incInv[y]||0);
-            let net = ocf + inv;
-            cumulative += net;
-            let t = y - baseYear;
-            let df = 1 / Math.pow(1+discount, t>=0 ? t : 0);
-            let discNet = net * df;
-            discCum += discNet;
-            discFlows.push({year:y, discNet, discCumulative: discCum});
-            cashflows.push({year:y, ocf:ocf.toFixed(2), icf:inv.toFixed(2), net:net.toFixed(2), cum:cumulative.toFixed(2), disc:discCum.toFixed(2), discRaw:discCum});
-        }
-        let npv = cashflows.length ? cashflows[cashflows.length-1].discRaw : 0;
-        let irr = (()=>{
-            let r=0.05;
-            for(let iter=0;iter<100;iter++){
-                let npv=0, dnpv=0;
-                for(let t=0;t<cashflows.length;t++){
-                    let cf = parseFloat(cashflows[t].net);
-                    npv += cf/Math.pow(1+r,t);
-                    dnpv += -t*cf/Math.pow(1+r,t+1);
-                }
-                if(Math.abs(npv)<1e-7) return r;
-                let newR = r - npv/dnpv;
-                if(Math.abs(newR-r)<1e-7) return newR;
-                r=newR;
-                if(r<-0.99) return -0.99;
-            }
-            return r;
-        })();
-        let discPayYear=null, cumD=0;
-        for(let i=0;i<discFlows.length;i++){
-            cumD+=discFlows[i].discNet;
-            if(cumD>=0 && discPayYear===null) discPayYear=discFlows[i].year;
-        }
-        let payback = discPayYear ? (discPayYear-projectStart) : null;
-        return { cashflows, npv, irr: (irr*100).toFixed(2), discountedPayback: payback, benefitAnnual: annualBenefit, discFlows };
+}
+
+function calculateCashFlows() {
+    const effects = computeEffects();
+    const annualBenefit = (effects.obs + effects.topo + effects.tech + effects.com + effects.supply + effects.acc + effects.nvos + effects.royalty + effects.opexChange) / 1e6;
+    const profitTax = (+document.getElementById('profit_tax_rate').value || 25) / 100;
+    const propTaxRate = (+document.getElementById('prop_tax_rate').value || 2.2) / 100;
+    const discount = (+document.getElementById('discount_rate').value || 14) / 100;
+    const baseYear = +document.getElementById('base_year').value || 2027;
+    const benefitStart = +document.getElementById('benefit_start_year').value || 2026;
+    const usefulLife = +document.getElementById('useful_life').value || 30;
+    const projectStart = +document.getElementById('project_start').value || 2026;
+    let incInv = {};
+    capexYears.forEach(c => { incInv[c.year] = (c.capex_with - c.capex_without) + c.rnd; });
+    const { years, residualValues, deprValues } = getBalanceSchedules();
+    const minY = Math.min(...years, ...Object.keys(incInv).map(Number));
+    const maxY = Math.max(...years, ...Object.keys(incInv).map(Number), benefitStart + usefulLife + 2);
+    let allYears = [];
+    for (let y = minY; y <= maxY; y++) allYears.push(y);
+    let deprMap = new Map(), resMap = new Map();
+    for (let i = 0; i < years.length; i++) { deprMap.set(years[i], deprValues[i]); resMap.set(years[i], residualValues[i]); }
+    let cashflows = [], cumulative = 0, discCum = 0, discFlows = [];
+    for (let idx = 0; idx < allYears.length; idx++) {
+        let y = allYears[idx];
+        let active = y >= benefitStart;
+        let operIncome = active ? annualBenefit : 0;
+        let depr = deprMap.get(y) || 0;
+        let nbv = resMap.get(y) || 0;
+        let nextNbv = resMap.get(y + 1) || 0;
+        let avgVal = (nbv + nextNbv) / 2;
+        let propTax = (active && nbv > 0) ? avgVal * propTaxRate : 0;
+        let profitBeforeTax = operIncome - depr - propTax;
+        let incomeTax = profitBeforeTax > 0 ? profitBeforeTax * profitTax : 0;
+        let ocf = operIncome - propTax - incomeTax;
+        let inv = -(incInv[y] || 0);
+        let net = ocf + inv;
+        cumulative += net;
+        let t = y - baseYear;
+        let df = 1 / Math.pow(1 + discount, t >= 0 ? t : 0);
+        let discNet = net * df;
+        discCum += discNet;
+        discFlows.push({ year: y, discNet, discCumulative: discCum });
+        cashflows.push({ year: y, ocf: ocf, icf: inv, net: net, cum: cumulative, disc: discCum });
     }
-    function displayResults() {
-        const { cashflows, npv, irr, discountedPayback, benefitAnnual, discFlows } = calculateCashFlows();
-        const tbody = document.querySelector('#cashflowTable tbody');
+    let npv = cashflows.length ? cashflows[cashflows.length - 1].disc : 0;
+    let irr = (() => {
+        let r = 0.05;
+        for (let iter = 0; iter < 100; iter++) {
+            let npv = 0, dnpv = 0;
+            for (let t = 0; t < cashflows.length; t++) {
+                let cf = cashflows[t].net;
+                npv += cf / Math.pow(1 + r, t);
+                dnpv += -t * cf / Math.pow(1 + r, t + 1);
+            }
+            if (Math.abs(npv) < 1e-7) return r;
+            let newR = r - npv / dnpv;
+            if (Math.abs(newR - r) < 1e-7) return newR;
+            r = newR;
+            if (r < -0.99) return -0.99;
+        }
+        return r;
+    })();
+    let discPayYear = null, cumD = 0;
+    for (let i = 0; i < discFlows.length; i++) {
+        cumD += discFlows[i].discNet;
+        if (cumD >= 0 && discPayYear === null) discPayYear = discFlows[i].year;
+    }
+    let payback = discPayYear ? (discPayYear - projectStart) : null;
+    return { cashflows, npv, irr: (irr * 100).toFixed(2), discountedPayback: payback, benefitAnnual: annualBenefit, discFlows, incInv };
+}
+
+function displayResults() {
+    const { cashflows, npv, irr, discountedPayback, benefitAnnual, discFlows } = calculateCashFlows();
+    const tbody = document.querySelector('#cashflowTable tbody');
+    if (tbody) {
         tbody.innerHTML = '';
         cashflows.forEach(cf => {
-            tbody.innerHTML += `<tr><td>${cf.year}</td><td>${cf.ocf}</td><td>${cf.icf}</td><td>${cf.net}</td><td>${cf.cum}</td><td>${cf.disc}</td></tr>`;
+            tbody.innerHTML += `<tr><td>${cf.year}</td><td>${formatNumberWithSpaces(cf.ocf, 2)}</td><td>${formatNumberWithSpaces(cf.icf, 2)}</td><td>${formatNumberWithSpaces(cf.net, 2)}</td><td>${formatNumberWithSpaces(cf.cum, 2)}</td><td>${formatNumberWithSpaces(cf.disc, 2)}</td></tr>`;
         });
-        const payStr = discountedPayback !== null ? discountedPayback.toFixed(1)+" лет" : "> горизонта";
-        const actualYear = +document.getElementById('actual_effect_year').value;
-        const found = discFlows.find(f=>f.year===actualYear);
-        const actualEffect = found ? found.discCumulative.toFixed(2)+" млн ₽" : "—";
-        document.getElementById('metricsPanel').innerHTML = `
-            <div class="metric-card"><div class="metric-label">NPV</div><div class="metric-value">${npv.toFixed(2)} млн ₽</div></div>
+    }
+    const payStr = discountedPayback !== null ? discountedPayback.toFixed(1) + " лет" : "> горизонта";
+    const actualYear = +document.getElementById('actual_effect_year').value;
+    const found = discFlows.find(f => f.year === actualYear);
+    const actualEffect = found ? formatNumberWithSpaces(found.discCumulative, 2) + " млн ₽" : "—";
+    const metricsPanel = document.getElementById('metricsPanel');
+    if (metricsPanel) {
+        metricsPanel.innerHTML = `
+            <div class="metric-card"><div class="metric-label">NPV</div><div class="metric-value">${formatNumberWithSpaces(npv, 2)} млн ₽</div></div>
             <div class="metric-card"><div class="metric-label">IRR</div><div class="metric-value">${irr}%</div></div>
             <div class="metric-card"><div class="metric-label">Срок окупаемости (диск.)</div><div class="metric-value">${payStr}</div></div>
-            <div class="metric-card"><div class="metric-label">Годовой эффект</div><div class="metric-value">${benefitAnnual.toFixed(2)} млн ₽</div></div>
+            <div class="metric-card"><div class="metric-label">Годовой эффект</div><div class="metric-value">${formatNumberWithSpaces(benefitAnnual, 2)} млн ₽</div></div>
             <div class="metric-card highlight"><div class="metric-label">Фактический эффект (на ${actualYear} г.)</div><div class="metric-value">${actualEffect}</div></div>
         `;
+    }
+    updateAnalysisCharts(cashflows, discFlows);
+}
+
+function updateAnalysisCharts(cashflows, discFlows) {
+    try {
+        const years = cashflows.map(cf => cf.year);
+        const netVals = cashflows.map(cf => cf.net);
+        const cumVals = discFlows.map(df => df.discCumulative);
+        const operVals = cashflows.map(cf => cf.ocf);
+        const invVals = cashflows.map(cf => cf.icf);
+        const clr = getChartColors();
+
+        const safeChart = (id, createFunc) => {
+            const canvas = document.getElementById(id);
+            if (!canvas) return;
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
+            createFunc(ctx);
+        };
+
+        safeChart('netCashflowChart', (ctx) => {
+            if (netChart) netChart.destroy();
+            netChart = new Chart(ctx, {
+                type: 'bar', data: { labels: years, datasets: [{ label: 'Чистый денежный поток', data: netVals, backgroundColor: clr.accent }] },
+                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
+            });
+        });
+        safeChart('cumDiscountedChart', (ctx) => {
+            if (cumChart) cumChart.destroy();
+            cumChart = new Chart(ctx, {
+                type: 'line', data: { labels: years, datasets: [{ label: 'Накопленный дисконтированный', data: cumVals, borderColor: clr.accent, backgroundColor: clr.bgFill, fill: true, tension: 0.2 }] },
+                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
+            });
+        });
+        safeChart('operatingCFChart', (ctx) => {
+            if (operChart) operChart.destroy();
+            operChart = new Chart(ctx, {
+                type: 'line', data: { labels: years, datasets: [{ label: 'Операционный поток', data: operVals, borderColor: clr.blue, tension: 0.2 }] },
+                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
+            });
+        });
+        safeChart('investingCFChart', (ctx) => {
+            if (invChart) invChart.destroy();
+            invChart = new Chart(ctx, {
+                type: 'bar', data: { labels: years, datasets: [{ label: 'Инвестиционный поток', data: invVals, backgroundColor: clr.orange }] },
+                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
+            });
+        });
+
+        const effectValues = updateSummary();
+        const effectLabels = ['Наблюдаемость', 'Топология сети', 'Тех. потери', 'Ком. потери', 'Увел. отпуска', 'Промбезопасность', 'НВОС', 'Роялти', 'Экспл. затраты'];
+        const effectData = [effectValues.obs, effectValues.topo, effectValues.tech, effectValues.com, effectValues.supply, effectValues.acc, effectValues.nvos, effectValues.royalty, effectValues.opex];
+        safeChart('donutEffectsChart', (ctx) => {
+            if (donutChart) donutChart.destroy();
+            donutChart = new Chart(ctx, {
+                type: 'doughnut',
+                data: { labels: effectLabels, datasets: [{ data: effectData, backgroundColor: ['#1f7b4d', '#34c97a', '#f0a74b', '#2c7eb6', '#a569bd', '#e67e22', '#27ae60', '#f39c12', '#7f8c8d'], borderWidth: 0 }] },
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: getChartColors().text, font: { size: 10 } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${formatNumberWithSpaces(ctx.raw, 0)} руб (${((ctx.raw / effectValues.totalRub) * 100).toFixed(1)}%)` } } } }
+            });
+        });
+
+        const { incInv } = calculateCashFlows();
+        const capexYearsList = Object.keys(incInv).map(Number).sort((a, b) => a - b);
+        const capexData = capexYearsList.map(y => incInv[y]);
+        safeChart('capexBarsChart', (ctx) => {
+            if (capexBarsChart) capexBarsChart.destroy();
+            capexBarsChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: capexYearsList, datasets: [{ label: 'Изменение КВ (прирост) млн руб', data: capexData, backgroundColor: clr.accent }] },
+                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
+            });
+        });
+
+        const discNetVals = discFlows.map(df => df.discNet);
+        safeChart('discountedCFChart', (ctx) => {
+            if (discountedCFChart) discountedCFChart.destroy();
+            discountedCFChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: years, datasets: [{ label: 'Дисконтированный поток (млн руб)', data: discNetVals, backgroundColor: clr.blue }] },
+                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
+            });
+        });
+
+        const capexWithVals = capexYears.map(c => c.capex_with);
+        const capexWithoutVals = capexYears.map(c => c.capex_without);
+        const capexYearsAll = capexYears.map(c => c.year);
+        safeChart('compareCapexChart', (ctx) => {
+            if (compareCapexChart) compareCapexChart.destroy();
+            compareCapexChart = new Chart(ctx, {
+                type: 'bar',
+                data: { labels: capexYearsAll, datasets: [
+                    { label: 'КВ "с проектом" (млн руб)', data: capexWithVals, backgroundColor: clr.accent },
+                    { label: 'КВ "без проекта" (млн руб)', data: capexWithoutVals, backgroundColor: clr.orange }
+                ] },
+                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
+            });
+        });
+    } catch (e) { console.warn("Ошибка при построении графиков", e); }
+}
+
+function fullRefresh() {
+    updateCapexTotals();
+    updateAmortization();
+    updatePropTax();
+    if (document.getElementById('tab_cashflow').classList.contains('active')) displayResults();
+    if (document.getElementById('tab_analysis').classList.contains('active')) {
+        const { cashflows, discFlows } = calculateCashFlows();
         updateAnalysisCharts(cashflows, discFlows);
     }
-    function updateAnalysisCharts(cashflows, discFlows) {
-        const years = cashflows.map(cf=>cf.year);
-        const netVals = cashflows.map(cf=>+cf.net);
-        const cumVals = discFlows.map(df=>df.discCumulative);
-        const operVals = cashflows.map(cf=>+cf.ocf);
-        const invVals = cashflows.map(cf=>+cf.icf);
-        const clr = getChartColors();
-        if (netChart) netChart.destroy();
-        netChart = new Chart(document.getElementById('netCashflowChart'), {
-            type: 'bar', data: { labels: years, datasets: [{ label: 'Чистый денежный поток', data: netVals, backgroundColor: clr.accent }] },
-            options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx)=>`${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-        });
-        if (cumChart) cumChart.destroy();
-        cumChart = new Chart(document.getElementById('cumDiscountedChart'), {
-            type: 'line', data: { labels: years, datasets: [{ label: 'Накопленный дисконтированный', data: cumVals, borderColor: clr.accent, backgroundColor: clr.bgFill, fill: true, tension: 0.2 }] },
-            options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx)=>`${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-        });
-        if (operChart) operChart.destroy();
-        operChart = new Chart(document.getElementById('operatingCFChart'), {
-            type: 'line', data: { labels: years, datasets: [{ label: 'Операционный поток', data: operVals, borderColor: clr.blue, tension: 0.2 }] },
-            options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx)=>`${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-        });
-        if (invChart) invChart.destroy();
-        invChart = new Chart(document.getElementById('investingCFChart'), {
-            type: 'bar', data: { labels: years, datasets: [{ label: 'Инвестиционный поток', data: invVals, backgroundColor: clr.orange }] },
-            options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx)=>`${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-        });
+    updateSummary();
+}
+
+function rebuildCapexYears() {
+    const start = +document.getElementById('project_start').value || 2026;
+    const life = +document.getElementById('useful_life').value || 30;
+    const maxY = start + life + 5;
+    const old = new Map();
+    capexYears.forEach(c => old.set(c.year, c));
+    let newArr = [];
+    for (let y = start; y <= maxY; y++) {
+        newArr.push(old.has(y) ? old.get(y) : { year: y, capex_without: 0, capex_with: 0, rnd: 0 });
     }
-    function fullRefresh() {
-        updateCapexTotals();
-        updateAmortization();
-        updatePropTax();
-        if (document.getElementById('tab_cashflow').classList.contains('active')) displayResults();
-        if (document.getElementById('tab_analysis').classList.contains('active')) {
-            const { cashflows, discFlows } = calculateCashFlows();
-            updateAnalysisCharts(cashflows, discFlows);
-        }
-    }
-    function rebuildCapexYears() {
-        const start = +document.getElementById('project_start').value||2026;
-        const life = +document.getElementById('useful_life').value||30;
-        const maxY = start + life + 5;
-        const old = new Map();
-        capexYears.forEach(c=>old.set(c.year,c));
-        let newArr = [];
-        for (let y=start; y<=maxY; y++) newArr.push(old.has(y) ? old.get(y) : {year:y, capex_without:0, capex_with:0, rnd:0, balance:0});
-        capexYears = newArr;
-        renderCapexForm();
-        fullRefresh();
-    }
+    capexYears = newArr;
+    renderCapexForm();
+    fullRefresh();
+}
+
+// Инициализация после загрузки DOM
+document.addEventListener('DOMContentLoaded', function() {
+    // Theme
     const themeBtn = document.getElementById('themeToggle');
     function setTheme(theme) {
         if (theme === 'dark') {
@@ -335,6 +503,8 @@
         const isDark = document.body.classList.contains('dark');
         setTheme(isDark ? 'light' : 'dark');
     });
+
+    // Tabs
     const allTabs = document.querySelectorAll('.tab-btn:not(#themeToggle)');
     const contents = document.querySelectorAll('.tab-content');
     allTabs.forEach(btn => {
@@ -353,7 +523,8 @@
             }
         });
     });
-    const paramIds = ['project_start','useful_life','benefit_start_year','base_year','discount_rate','profit_tax_rate','prop_tax_rate'];
+
+    const paramIds = ['project_start', 'useful_life', 'benefit_start_year', 'base_year', 'discount_rate', 'profit_tax_rate', 'prop_tax_rate'];
     paramIds.forEach(id => {
         document.getElementById(id)?.addEventListener('change', () => {
             if (id === 'project_start' || id === 'useful_life') rebuildCapexYears();
@@ -361,10 +532,9 @@
         });
     });
     document.getElementById('actual_effect_year')?.addEventListener('change', displayResults);
-    document.getElementById('refreshEffectsBtn')?.addEventListener('click', () => { computeEffects(); fullRefresh(); });
     document.getElementById('addCapexYearBtn')?.addEventListener('click', () => {
-        let lastYear = capexYears.length ? capexYears[capexYears.length-1].year+1 : (+document.getElementById('project_start').value||2026);
-        capexYears.push({year:lastYear, capex_without:0, capex_with:0, rnd:0, balance:0});
+        let lastYear = capexYears.length ? capexYears[capexYears.length - 1].year + 1 : (+document.getElementById('project_start').value || 2026);
+        capexYears.push({ year: lastYear, capex_without: 0, capex_with: 0, rnd: 0 });
         renderCapexForm();
         fullRefresh();
     });
@@ -373,7 +543,12 @@
         renderCapexForm();
         fullRefresh();
     });
+
+    const effectInputs = document.querySelectorAll('#tab_effects input');
+    effectInputs.forEach(inp => inp.addEventListener('input', () => { computeEffects(); updateSummary(); fullRefresh(); }));
+
     initCapexYears();
     computeEffects();
+    updateSummary();
     fullRefresh();
-})();
+});

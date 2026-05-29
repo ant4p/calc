@@ -1,358 +1,20 @@
-<!DOCTYPE html>
-<html lang="ru">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes">
-    <title>Экономический эффект проекта | Светлая / Тёмная тема</title>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+<!-- ==================== index.html ==================== -->
+{% extends 'base.html' %}
+
+{% load static %}
+
+{% block title %}Экономический эффект проекта | Калькулятор{% endblock %}
+
+{% block extra_head %}
+    <!-- Внешние библиотеки -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+    <!-- Стили калькулятора -->
+    <link rel="stylesheet" href="{% static 'src/css/styles.css' %}">
+{% endblock %}
 
-        /* Светлая тема (по умолчанию) */
-        :root {
-            --bg-body: #eef2f8;
-            --bg-surface: #ffffff;
-            --bg-card: #ffffff;
-            --border-subtle: #e9edf2;
-            --text-primary: #1a2c3e;
-            --text-secondary: #4a5b6e;
-            --accent-green: #1f7b4d;
-            --accent-green-dark: #146b41;
-            --accent-hover: #0f5634;
-            --readonly-bg: #f5f9fc;
-            --btn-gradient-start: #1f7b4d;
-            --btn-gradient-end: #146b41;
-            --btn-danger-start: #778f87;
-            --btn-danger-end: #5b6f66;
-            --table-header-bg: #f8fafc;
-            --metric-bg: #fbfefc;
-            --metric-border: #e2edf0;
-            --chart-grid: #e2e8f0;
-            --chart-text: #1a2c3e;
-            --chart-secondary-text: #4a5b6e;
-        }
-
-        /* Тёмная тема */
-        body.dark {
-            --bg-body: #0f1217;
-            --bg-surface: #1a1f2a;
-            --bg-card: #222833;
-            --border-subtle: #2d3543;
-            --text-primary: #eef2ff;
-            --text-secondary: #9aa8bf;
-            --accent-green: #34c97a;
-            --accent-green-dark: #2a9e62;
-            --accent-hover: #42d488;
-            --readonly-bg: #1e242f;
-            --btn-gradient-start: #34c97a;
-            --btn-gradient-end: #2a9e62;
-            --btn-danger-start: #a56b6b;
-            --btn-danger-end: #7a4d4d;
-            --table-header-bg: #1e2531;
-            --metric-bg: #191f2a;
-            --metric-border: #2d3543;
-            --chart-grid: #2d3543;
-            --chart-text: #eef2ff;
-            --chart-secondary-text: #9aa8bf;
-        }
-
-        body {
-            background: var(--bg-body);
-            font-family: 'Inter', system-ui, sans-serif;
-            padding: 2rem 1.5rem;
-            color: var(--text-primary);
-            transition: background 0.2s, color 0.2s;
-        }
-
-        .app-container {
-            max-width: 1600px;
-            margin: 0 auto;
-            background: var(--bg-surface);
-            border-radius: 2rem;
-            box-shadow: 0 20px 35px -12px rgba(0,0,0,0.12);
-            overflow: hidden;
-            border: 1px solid var(--border-subtle);
-        }
-
-        /* Вкладки */
-        .tabs {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            background: var(--bg-surface);
-            border-bottom: 1px solid var(--border-subtle);
-            padding: 0 1.5rem;
-            gap: 0.25rem;
-        }
-
-        .tab-btn {
-            background: transparent;
-            border: none;
-            padding: 0.9rem 1.4rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            cursor: pointer;
-            transition: all 0.2s;
-            border-bottom: 2px solid transparent;
-            margin-bottom: -1px;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-
-        .tab-btn i { font-size: 1.1rem; }
-        .tab-btn.active {
-            color: var(--accent-green);
-            border-bottom-color: var(--accent-green);
-        }
-        .tab-btn:hover:not(.active) {
-            color: var(--accent-green);
-            background: rgba(31,123,77,0.08);
-            border-radius: 1rem 1rem 0 0;
-        }
-
-        /* Кнопка переключения темы */
-        .theme-toggle {
-            margin-left: auto;
-            background: transparent;
-            border: 1px solid var(--border-subtle);
-            border-radius: 2rem;
-            padding: 0.5rem 1rem;
-            font-size: 0.9rem;
-            font-weight: 500;
-            color: var(--text-primary);
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            transition: all 0.2s;
-        }
-        .theme-toggle:hover {
-            background: var(--accent-green);
-            border-color: var(--accent-green);
-            color: white;
-        }
-
-        /* Контент вкладок */
-        .tab-content {
-            display: none;
-            padding: 2rem;
-            background: var(--bg-surface);
-            animation: fadeSlide 0.2s ease-out;
-        }
-        .tab-content.active { display: block; }
-        @keyframes fadeSlide {
-            from { opacity: 0; transform: translateY(6px);}
-            to { opacity: 1; transform: translateY(0);}
-        }
-
-        /* Карточки, сетки */
-        .form-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-            gap: 1.5rem;
-            margin-bottom: 2rem;
-        }
-        .card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 1.5rem;
-            padding: 1.2rem 1.3rem;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.02);
-            transition: all 0.2s;
-        }
-        .card:hover { border-color: var(--accent-green); box-shadow: 0 8px 20px rgba(0,0,0,0.05); }
-        .card-title {
-            font-weight: 600;
-            font-size: 1rem;
-            margin-bottom: 1.2rem;
-            color: var(--accent-green);
-            display: flex;
-            align-items: center;
-            gap: 0.6rem;
-            border-left: 3px solid var(--accent-green);
-            padding-left: 0.85rem;
-        }
-        .input-row {
-            display: flex;
-            flex-wrap: wrap;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 0.9rem;
-            gap: 0.6rem;
-        }
-        .input-row label {
-            font-size: 0.85rem;
-            font-weight: 500;
-            color: var(--text-secondary);
-            flex: 1;
-        }
-        .input-row input, .input-row select {
-            background: var(--bg-surface);
-            border: 1px solid var(--border-subtle);
-            border-radius: 1rem;
-            padding: 0.5rem 0.9rem;
-            width: 170px;
-            font-family: monospace;
-            font-size: 0.85rem;
-            color: var(--text-primary);
-        }
-        .input-row input:focus, .input-row select:focus {
-            border-color: var(--accent-green);
-            outline: none;
-            box-shadow: 0 0 0 3px rgba(31,123,77,0.15);
-        }
-        .input-row input[readonly] {
-            background: var(--readonly-bg);
-            font-weight: 500;
-            color: var(--accent-green);
-        }
-        .table-wrapper {
-            overflow-x: auto;
-            margin-top: 1rem;
-            border-radius: 1.25rem;
-            border: 1px solid var(--border-subtle);
-            background: var(--bg-card);
-        }
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            font-size: 0.8rem;
-        }
-        th {
-            background: var(--table-header-bg);
-            padding: 0.85rem 0.6rem;
-            font-weight: 600;
-            color: var(--text-primary);
-            border-bottom: 1px solid var(--border-subtle);
-        }
-        td {
-            padding: 0.65rem 0.45rem;
-            text-align: center;
-            border-bottom: 1px solid var(--border-subtle);
-            color: var(--text-primary);
-        }
-        tr:hover td { background: rgba(31,123,77,0.05); }
-        .metrics {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 1.2rem;
-            margin-bottom: 2rem;
-            background: var(--metric-bg);
-            border-radius: 2rem;
-            padding: 1.2rem 1.8rem;
-            border: 1px solid var(--metric-border);
-            justify-content: center;
-        }
-        .metric-card {
-            background: var(--bg-card);
-            border-radius: 1.5rem;
-            padding: 0.8rem 1.4rem;
-            flex: 1;
-            min-width: 160px;
-            text-align: center;
-            border: 1px solid var(--border-subtle);
-        }
-        .metric-label {
-            font-size: 0.7rem;
-            text-transform: uppercase;
-            font-weight: 600;
-            color: var(--text-secondary);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 0.3rem;
-            margin-bottom: 0.3rem;
-        }
-        .metric-value {
-            font-size: 1.5rem;
-            font-weight: 700;
-            color: var(--accent-green);
-        }
-        .metric-card.highlight {
-            background: rgba(31,123,77,0.1);
-            border-color: var(--accent-green);
-        }
-        .metric-card.highlight .metric-value { font-size: 1.9rem; }
-        button.calc-btn {
-            background: linear-gradient(100deg, var(--btn-gradient-start), var(--btn-gradient-end));
-            color: white;
-            border: none;
-            padding: 0.6rem 1.6rem;
-            border-radius: 2rem;
-            font-weight: 600;
-            cursor: pointer;
-            display: inline-flex;
-            align-items: center;
-            gap: 0.6rem;
-        }
-        button.calc-btn:hover {
-            background: linear-gradient(100deg, var(--accent-hover), var(--btn-gradient-start));
-            transform: scale(0.98);
-        }
-        hr { margin: 1rem 0; border-color: var(--border-subtle); }
-        canvas { max-height: 320px; width: 100%; background: var(--bg-surface); border-radius: 1rem; padding: 0.25rem; }
-        .capex-grid { display: flex; flex-direction: column; gap: 0.8rem; }
-        .capex-row {
-            display: flex;
-            flex-wrap: wrap;
-            align-items: center;
-            gap: 0.8rem;
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 1.2rem;
-            padding: 0.8rem 1.2rem;
-        }
-        .capex-year { font-weight: 700; min-width: 70px; color: var(--accent-green); }
-        .capex-field { display: flex; align-items: center; gap: 0.5rem; }
-        .capex-field label { font-size: 0.7rem; color: var(--text-secondary); }
-        .capex-field input { width: 105px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 1rem; padding: 0.4rem 0.6rem; color: var(--text-primary); }
-        .readonly-field {
-            background: var(--readonly-bg);
-            color: var(--accent-green);
-            font-weight: 500;
-            min-width: 90px;
-            text-align: center;
-            padding: 0.4rem 0.5rem;
-            border-radius: 1rem;
-            border: 1px solid var(--border-subtle);
-        }
-        .split-row { display: flex; flex-wrap: wrap; gap: 1.8rem; }
-        .split-col { flex: 1; min-width: 280px; }
-        .param-mini-card {
-            background: var(--bg-card);
-            border: 1px solid var(--border-subtle);
-            border-radius: 1.2rem;
-            padding: 0.8rem 1rem;
-        }
-        .param-grid {
-            display: grid;
-            grid-template-columns: repeat(4, 1fr);
-            gap: 1rem;
-            margin-bottom: 1.8rem;
-        }
-        .full-width-card { grid-column: 1 / -1; }
-        .analysis-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1.8rem; margin-top: 1rem; }
-        @media (max-width: 1000px) { .param-grid { grid-template-columns: repeat(2, 1fr); } .form-grid { grid-template-columns: 1fr; } }
-        @media (max-width: 800px) { .capex-row { flex-direction: column; align-items: flex-start; } .split-row, .analysis-grid { flex-direction: column; grid-template-columns: 1fr; } .tabs { padding: 0 0.8rem; } .tab-btn { padding: 0.7rem 1rem; font-size: 0.8rem; } }
-        footer {
-            font-size: 0.7rem;
-            text-align: center;
-            padding: 1rem;
-            border-top: 1px solid var(--border-subtle);
-            color: var(--text-secondary);
-            background: var(--bg-surface);
-        }
-    </style>
-</head>
-<body>
+{% block content %}
 <div class="app-container">
     <div class="tabs">
         <button class="tab-btn active" data-tab="tab_effects"><i class="bi bi-calculator-fill"></i> Калькулятор эффектов</button>
@@ -365,520 +27,160 @@
         <button class="theme-toggle" id="themeToggle"><i class="bi bi-moon-stars"></i> Тёмная тема</button>
     </div>
 
-    <!-- Вкладка Эффекты -->
+    <!-- 1. Эффекты -->
     <div id="tab_effects" class="tab-content active">
         <div class="form-grid">
-            <div class="card"><div class="card-title"><i class="bi bi-eye-fill"></i> 1.1 Наблюдаемость</div>
-                <div class="input-row"><label>Сокращение времени (ч/год)</label><input type="number" id="obs_time" value="100"></div>
-                <div class="input-row"><label>Стоимость топлива (руб/л)</label><input type="number" id="fuel_cost" value="60"></div>
-                <div class="input-row"><label>Средняя скорость (км/ч)</label><input type="number" id="speed_kmh" value="80"></div>
-                <div class="input-row"><label>Расход топлива (л/км)</label><input type="number" id="fuel_consumption" value="0.08"></div>
+            <div class="card"><div class="card-title"><i class="bi bi-eye-fill"></i> 1.1 Наблюдаемость и локализация</div>
+                <div class="input-row"><label>Сокращение времени (ч/год)</label><input type="number" id="obs_time" value="100" step="1"></div>
+                <div class="input-row"><label>Стоимость топлива (руб/л)</label><input type="number" id="fuel_cost" value="60" step="0.5"></div>
+                <div class="input-row"><label>Средняя скорость (км/ч)</label><input type="number" id="speed_kmh" value="80" step="0.5"></div>
+                <div class="input-row"><label>Расход топлива (л/км)</label><input type="number" id="fuel_consumption" value="0.08" step="0.01"></div>
                 <div class="input-row"><label>Эффект (руб)</label><input type="text" id="obs_effect_display" readonly></div>
             </div>
-            <div class="card"><div class="card-title"><i class="bi bi-diagram-3"></i> 1.2 Топология сети</div>
-                <div class="input-row"><label>Уд. затраты на ТОиР (руб/км)</label><input type="number" id="topo_cost_per_km" value="100"></div>
-                <div class="input-row"><label>Сокращение протяжённости (км)</label><input type="number" id="topo_km_reduce" value="1000"></div>
+            <div class="card"><div class="card-title"><i class="bi bi-diagram-3"></i> 1.2 Изменение топологии сети</div>
+                <div class="input-row"><label>Уд. затраты на ТОиР (руб/км)</label><input type="number" id="topo_cost_per_km" value="100" step="10"></div>
+                <div class="input-row"><label>Сокращение протяжённости (км)</label><input type="number" id="topo_km_reduce" value="1000" step="50"></div>
                 <div class="input-row"><label>Экономия (руб)</label><input type="text" id="topo_effect_display" readonly></div>
             </div>
             <div class="card"><div class="card-title"><i class="bi bi-lightning-charge-fill"></i> 1.3 Технологические потери</div>
                 <div class="input-row"><label>Потери "без проекта" (кВт·ч)</label><input type="number" id="tech_loss_before" value="100000"></div>
                 <div class="input-row"><label>Потери "с проектом" (кВт·ч)</label><input type="number" id="tech_loss_after" value="100"></div>
-                <div class="input-row"><label>Ставка (руб/кВт·ч)</label><input type="number" id="tech_rate" value="2"></div>
+                <div class="input-row"><label>Ставка за потери (руб/кВт·ч)</label><input type="number" id="tech_rate" value="2" step="0.1"></div>
                 <div class="input-row"><label>Эффект (руб)</label><input type="text" id="tech_effect_display" readonly></div>
             </div>
             <div class="card"><div class="card-title"><i class="bi bi-arrow-repeat"></i> 1.4 Коммерческие потери</div>
-                <div class="input-row"><label>Потери "без" (кВт·ч)</label><input type="number" id="com_loss_before" value="0"></div>
-                <div class="input-row"><label>Потери "с" (кВт·ч)</label><input type="number" id="com_loss_after" value="0"></div>
+                <div class="input-row"><label>Потери "без проекта" (кВт·ч)</label><input type="number" id="com_loss_before" value="0"></div>
+                <div class="input-row"><label>Потери "с проектом" (кВт·ч)</label><input type="number" id="com_loss_after" value="0"></div>
                 <div class="input-row"><label>Ставка (руб/кВт·ч)</label><input type="number" id="com_rate" value="0"></div>
                 <div class="input-row"><label>Эффект (руб)</label><input type="text" id="com_effect_display" readonly></div>
             </div>
-            <div class="card"><div class="card-title"><i class="bi bi-graph-up"></i> 1.5 Увеличение отпуска</div>
-                <div class="input-row"><label>Отпуск "без" (кВт·ч)</label><input type="number" id="supply_before" value="100"></div>
-                <div class="input-row"><label>Отпуск "с" (кВт·ч)</label><input type="number" id="supply_after" value="0"></div>
-                <div class="input-row"><label>Тариф (руб/кВт·ч)</label><input type="number" id="tariff_supply" value="2"></div>
-                <div class="input-row"><label>Выручка (руб)</label><input type="text" id="supply_effect_display" readonly></div>
+            <div class="card"><div class="card-title"><i class="bi bi-graph-up"></i> 1.5 Увеличение полезного отпуска</div>
+                <div class="input-row"><label>Отпуск "без проекта" (кВт·ч)</label><input type="number" id="supply_before" value="100"></div>
+                <div class="input-row"><label>Отпуск "с проектом" (кВт·ч)</label><input type="number" id="supply_after" value="0"></div>
+                <div class="input-row"><label>Тариф (руб/кВт·ч)</label><input type="number" id="tariff_supply" value="2" step="0.1"></div>
+                <div class="input-row"><label>Дополнительная выручка (руб)</label><input type="text" id="supply_effect_display" readonly></div>
             </div>
-            <div class="card"><div class="card-title"><i class="bi bi-shield-shaded"></i> 1.6 Промбезопасность</div>
-                <div class="input-row"><label>Аварии "без" (шт)</label><input type="number" id="acc_before" value="2"></div>
-                <div class="input-row"><label>Аварии "с" (шт)</label><input type="number" id="acc_after" value="1"></div>
-                <div class="input-row"><label>Затраты на аварию (руб)</label><input type="number" id="acc_cost" value="100000"></div>
+            <div class="card"><div class="card-title"><i class="bi bi-shield-shaded"></i> 1.6 Промышленная безопасность</div>
+                <div class="input-row"><label>Аварии "без проекта" (шт/год)</label><input type="number" id="acc_before" value="2"></div>
+                <div class="input-row"><label>Аварии "с проектом" (шт/год)</label><input type="number" id="acc_after" value="1"></div>
+                <div class="input-row"><label>Затраты на ликвидацию аварии (руб)</label><input type="number" id="acc_cost" value="100000"></div>
                 <div class="input-row"><label>Эффект (руб)</label><input type="text" id="acc_effect_display" readonly></div>
             </div>
             <div class="card"><div class="card-title"><i class="bi bi-tree-fill"></i> 1.7 НВОС</div>
-                <div class="input-row"><label>Платежи "без" (руб)</label><input type="number" id="nvos_before" value="100000"></div>
-                <div class="input-row"><label>Платежи "с" (руб)</label><input type="number" id="nvos_after" value="0"></div>
-                <div class="input-row"><label>Экономия (руб)</label><input type="text" id="nvos_effect_display" readonly></div>
+                <div class="input-row"><label>Платежи "без проекта" (руб)</label><input type="number" id="nvos_before" value="100000"></div>
+                <div class="input-row"><label>Платежи "с проектом" (руб)</label><input type="number" id="nvos_after" value="0"></div>
+                <div class="input-row"><label>Изменение затрат (руб)</label><input type="text" id="nvos_effect_display" readonly></div>
             </div>
             <div class="card"><div class="card-title"><i class="bi bi-copyright"></i> 1.8 Роялти</div>
-                <div class="input-row"><label>База (руб)</label><input type="number" id="royalty_base" value="1000000"></div>
-                <div class="input-row"><label>Ставка (%)</label><input type="number" id="royalty_rate" value="15"></div>
-                <div class="input-row"><label>Поступления (руб)</label><input type="text" id="royalty_effect_display" readonly></div>
+                <div class="input-row"><label>База для роялти (руб)</label><input type="number" id="royalty_base" value="1000000"></div>
+                <div class="input-row"><label>Ставка роялти (%)</label><input type="number" id="royalty_rate" value="15" step="0.5"></div>
+                <div class="input-row"><label>Поступления (руб/год)</label><input type="text" id="royalty_effect_display" readonly></div>
             </div>
-            <div class="card"><div class="card-title"><i class="bi bi-tools"></i> Эксплуатационные затраты</div>
-                <div class="input-row"><label>Затраты "без" (руб)</label><input type="number" id="opex_before" value="0"></div>
-                <div class="input-row"><label>Затраты "с" (руб)</label><input type="number" id="opex_after" value="0"></div>
-                <div class="input-row"><label>Экономия (руб)</label><input type="text" id="opex_change_display" readonly></div>
+            <div class="card"><div class="card-title"><i class="bi bi-tools"></i> Изменение эксплуатационных затрат</div>
+                <div class="input-row"><label>Затраты "без проекта" (руб)</label><input type="number" id="opex_before" value="0"></div>
+                <div class="input-row"><label>Затраты "с проектом" (руб)</label><input type="number" id="opex_after" value="0"></div>
+                <div class="input-row"><label>Годовая экономия (руб)</label><input type="text" id="opex_change_display" readonly></div>
             </div>
         </div>
         <div style="text-align: right;"><button class="calc-btn" id="refreshEffectsBtn"><i class="bi bi-arrow-repeat"></i> Пересчитать эффекты</button></div>
     </div>
 
-    <!-- Вкладка Параметры -->
+    <!-- 2. Параметры -->
     <div id="tab_params" class="tab-content">
         <div class="param-grid">
-            <div class="param-mini-card full-width-card"><div class="input-row"><label><i class="bi bi-pencil-square"></i> Наименование проекта</label><input type="text" id="project_name" value="Инновационный проект" style="width:100%;"></div></div>
-            <div class="param-mini-card" style="grid-column: span 2;"><div class="input-row"><label><i class="bi bi-box-seam"></i> Оборудование "с проектом"</label><input type="text" id="equipment_with" value="Инновационное оборудование" style="width:100%;"></div></div>
-            <div class="param-mini-card" style="grid-column: span 2;"><div class="input-row"><label><i class="bi bi-box"></i> Оборудование "без проекта"</label><input type="text" id="equipment_without" value="Традиционное оборудование" style="width:100%;"></div></div>
-            <div class="param-mini-card"><div class="input-row"><label>Норма дисконта (%)</label><input type="number" id="discount_rate" value="14"></div></div>
-            <div class="param-mini-card"><div class="input-row"><label>Год приведения</label><input type="number" id="base_year" value="2027"></div></div>
+            <div class="param-mini-card full-width-card" style="grid-column: 1/-1; margin-bottom: 0.5rem;">
+                <div class="input-row"><label><i class="bi bi-pencil-square"></i> Наименование проекта</label><input type="text" id="project_name" value="Инновационный проект" style="width:100%;"></div>
+            </div>
+            <div class="param-mini-card" style="grid-column: span 2;">
+                <div class="input-row"><label><i class="bi bi-box-seam"></i> Оборудование "с проектом"</label><input type="text" id="equipment_with" value="Инновационное оборудование" style="width:100%;"></div>
+            </div>
+            <div class="param-mini-card" style="grid-column: span 2;">
+                <div class="input-row"><label><i class="bi bi-box"></i> Оборудование "без проекта"</label><input type="text" id="equipment_without" value="Традиционное оборудование" style="width:100%;"></div>
+            </div>
+            <div class="param-mini-card"><div class="input-row"><label>Норма дисконта (%)</label><input type="number" id="discount_rate" value="14" step="0.5"></div></div>
+            <div class="param-mini-card"><div class="input-row"><label>Год приведения (дисконтирования)</label><input type="number" id="base_year" value="2027"></div></div>
             <div class="param-mini-card"><div class="input-row"><label>Год начала проекта</label><input type="number" id="project_start" value="2026"></div></div>
             <div class="param-mini-card"><div class="input-row"><label>Период НИОКР (лет)</label><input type="number" id="rnd_period" value="5"></div></div>
-            <div class="param-mini-card"><div class="input-row"><label>Срок полезного использования</label><input type="number" id="useful_life" value="30"></div></div>
-            <div class="param-mini-card"><div class="input-row"><label>Налог на имущество (%)</label><input type="number" id="prop_tax_rate" value="2.2"></div></div>
-            <div class="param-mini-card"><div class="input-row"><label>Налог на прибыль (%)</label><input type="number" id="profit_tax_rate" value="25"></div></div>
-            <div class="param-mini-card"><div class="input-row"><label>Год начала эффектов</label><input type="number" id="benefit_start_year" value="2026"></div></div>
+            <div class="param-mini-card"><div class="input-row"><label>Срок полезного использования (лет)</label><input type="number" id="useful_life" value="30"></div></div>
+            <div class="param-mini-card"><div class="input-row"><label>Налог на имущество (%)</label><input type="number" id="prop_tax_rate" value="2.2" step="0.1"></div></div>
+            <div class="param-mini-card"><div class="input-row"><label>Налог на прибыль (%)</label><input type="number" id="profit_tax_rate" value="25" step="1"></div></div>
+            <div class="param-mini-card"><div class="input-row"><label>Год начала эффектов (ввод)</label><input type="number" id="benefit_start_year" value="2026"></div></div>
         </div>
     </div>
 
-    <!-- Капитальные вложения -->
+    <!-- 3. Капитальные вложения -->
     <div id="tab_capex" class="tab-content">
         <div class="card">
-            <div class="card-title"><i class="bi bi-pie-chart-fill"></i> Сводные данные</div>
+            <div class="card-title"><i class="bi bi-pie-chart-fill"></i> Сводные данные по инвестициям</div>
             <div class="input-row"><label>Суммарно КВ "без проекта" (млн руб):</label><input type="text" id="capex_without_total" readonly></div>
             <div class="input-row"><label>Суммарно КВ "с проектом" (млн руб):</label><input type="text" id="capex_with_total" readonly></div>
             <div class="input-row"><label>НИОКР суммарно (млн руб):</label><input type="text" id="rnd_total_display" readonly></div>
-            <div class="input-row"><label>Изменение КВ (прирост):</label><input type="text" id="total_incremental" readonly></div>
-            <div class="input-row"><label>КВ "с проектом" ВСЕГО (с НИОКР):</label><input type="text" id="total_with_rnd" readonly></div>
+            <div class="input-row"><label>Изменение капитальных вложений (прирост):</label><input type="text" id="total_incremental" readonly></div>
+            <div class="input-row"><label>Капитальные вложения "с проектом" ВСЕГО (с НИОКР):</label><input type="text" id="total_with_rnd" readonly></div>
             <hr>
-            <div class="card-title">Инвестиции по годам (млн руб)</div>
+            <div class="card-title" style="margin-top: 1rem;"><i class="bi bi-table"></i> Инвестиционные затраты по годам (млн руб, без НДС)</div>
             <div id="capexDynamicList" class="capex-grid"></div>
             <div style="display: flex; gap: 12px; margin-top: 20px;">
                 <button class="calc-btn" id="addCapexYearBtn"><i class="bi bi-plus-lg"></i> Добавить год</button>
-                <button class="calc-btn" id="removeLastCapexBtn"><i class="bi bi-trash3"></i> Удалить последний год</button>
+                <button class="calc-btn" id="removeLastCapexBtn" style="background:#6c8f66;"><i class="bi bi-trash3"></i> Удалить последний год</button>
             </div>
         </div>
     </div>
 
-    <!-- Амортизация -->
-    <div id="tab_amort" class="tab-content"><div class="card"><div class="card-title">Амортизация</div><div class="split-row"><div class="split-col"><div class="table-wrapper"><table id="amortTable"><thead><tr><th>Год</th><th>Остаточная стоимость (млн руб)</th><th>Амортизация (млн руб)</th></tr></thead><tbody></tbody></table></div></div><div class="split-col"><canvas id="amortChart"></canvas></div></div></div></div>
-
-    <!-- Налог на имущество -->
-    <div id="tab_proptax" class="tab-content"><div class="card"><div class="card-title">Налог на имущество</div><div class="split-row"><div class="split-col"><div class="table-wrapper"><table id="propTaxTable"><thead><tr><th>Год</th><th>Остаточная стоимость на начало</th><th>Среднегодовая</th><th>Налог (млн руб)</th></tr></thead><tbody></tbody></table></div></div><div class="split-col"><canvas id="propTaxChart"></canvas></div></div></div></div>
-
-    <!-- Денежный поток -->
-    <div id="tab_cashflow" class="tab-content">
-        <div id="metricsPanel" class="metrics"></div>
-        <div class="cashflow-header"><div class="input-row" style="margin-bottom:0; background:var(--metric-bg); padding:0.5rem 1rem; border-radius:30px;"><label><i class="bi bi-calendar-event"></i> Год для фактического эффекта:</label><input type="number" id="actual_effect_year" value="2030" style="width:110px;"></div></div>
-        <div class="table-wrapper"><table id="cashflowTable"><thead><tr><th>Год</th><th>Операционный поток (млн руб)</th><th>Инвестиционный поток</th><th>Суммарный поток</th><th>Накопленный поток</th><th>Дисконтированный накопленный</th></tr></thead><tbody></tbody></table></div>
+    <!-- 4. Амортизация -->
+    <div id="tab_amort" class="tab-content">
+        <div class="card">
+            <div class="card-title"><i class="bi bi-graph-down"></i> Амортизация (по постановке на баланс)</div>
+            <div class="split-row">
+                <div class="split-col"><div class="table-wrapper"><table id="amortTable"><thead><tr><th>Год</th><th>Остаточная стоимость (млн руб)</th><th>Годовая амортизация (млн руб)</th></tr></thead><tbody></tbody></table></div></div>
+                <div class="split-col"><canvas id="amortChart" width="500" height="300"></canvas></div>
+            </div>
+        </div>
     </div>
 
-    <!-- Анализ -->
-    <div id="tab_analysis" class="tab-content"><div class="card"><div class="card-title">Графический анализ</div><div class="analysis-grid"><div><canvas id="netCashflowChart"></canvas><div style="text-align:center;">Чистый денежный поток</div></div><div><canvas id="cumDiscountedChart"></canvas><div style="text-align:center;">Накопленный дисконтированный</div></div><div><canvas id="operatingCFChart"></canvas><div style="text-align:center;">Операционный поток</div></div><div><canvas id="investingCFChart"></canvas><div style="text-align:center;">Инвестиционный поток</div></div></div></div></div>
-    <footer>Расчетный модуль — автоматическое обновление • Переключение темы</footer>
+    <!-- 5. Налог на имущество -->
+    <div id="tab_proptax" class="tab-content">
+        <div class="card">
+            <div class="card-title"><i class="bi bi-bank2"></i> Налог на имущество (по остаточной стоимости)</div>
+            <div class="split-row">
+                <div class="split-col"><div class="table-wrapper"><table id="propTaxTable"><thead><tr><th>Год</th><th>Остаточная стоимость на начало (млн руб)</th><th>Среднегодовая стоимость (млн руб)</th><th>Налог (млн руб)</th></tr></thead><tbody></tbody></table></div></div>
+                <div class="split-col"><canvas id="propTaxChart" width="500" height="300"></canvas></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 6. Денежный поток -->
+    <div id="tab_cashflow" class="tab-content">
+        <div id="metricsPanel" class="metrics"></div>
+        <div class="cashflow-header">
+            <div class="input-row" style="margin-bottom:0; background:var(--metric-bg); padding:0.5rem 1rem; border-radius: 30px;">
+                <label><i class="bi bi-calendar-event"></i> Год для фактического эффекта:</label>
+                <input type="number" id="actual_effect_year" value="2030" step="1" style="width:110px;">
+            </div>
+        </div>
+        <div class="table-wrapper">
+            <table id="cashflowTable">
+                <thead><tr><th>Год</th><th>Операционный поток (млн руб)</th><th>Инвестиционный поток</th><th>Суммарный поток</th><th>Накопленный поток</th><th>Дисконтированный накопленный</th></tr></thead>
+                <tbody></tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 7. Анализ -->
+    <div id="tab_analysis" class="tab-content">
+        <div class="card">
+            <div class="card-title"><i class="bi bi-bar-chart-steps"></i> Графический анализ денежных потоков</div>
+            <div class="analysis-grid">
+                <div><canvas id="netCashflowChart" width="500" height="300"></canvas><div style="text-align:center; margin-top:0.5rem;">Чистый денежный поток (млн руб)</div></div>
+                <div><canvas id="cumDiscountedChart" width="500" height="300"></canvas><div style="text-align:center; margin-top:0.5rem;">Накопленный дисконтированный поток (млн руб)</div></div>
+                <div><canvas id="operatingCFChart" width="500" height="300"></canvas><div style="text-align:center; margin-top:0.5rem;">Операционный денежный поток (млн руб)</div></div>
+                <div><canvas id="investingCFChart" width="500" height="300"></canvas><div style="text-align:center; margin-top:0.5rem;">Инвестиционный поток (оттоки, млн руб)</div></div>
+            </div>
+        </div>
+    </div>
+    <footer style="font-size:0.7rem; text-align:center; padding:1rem; border-top:1px solid #eef2f6;">Расчетный модуль — автоматическое обновление • Переключение темы</footer>
 </div>
 
-<script>
-    (function() {
-        // --- Данные CAPEX ---
-        let capexYears = [];
-        function initCapexYears() {
-            const startYear = 2026;
-            const custom = {2026:{wout:8,w:5,rnd:5,balance:5},2027:{wout:5,w:6,rnd:3,balance:6},2028:{wout:5,w:4,rnd:2,balance:1},2029:{wout:5,w:0,rnd:2,balance:2},2030:{wout:5,w:0,rnd:0,balance:0},2031:{wout:5,w:0,rnd:0,balance:0},2032:{wout:5,w:0,rnd:1,balance:0}};
-            const usefulLife = +document.getElementById('useful_life').value || 30;
-            const maxYear = Math.max(2032, startYear + usefulLife + 5);
-            capexYears = [];
-            for (let y = startYear; y <= maxYear; y++) {
-                if (custom[y]) capexYears.push({ year: y, capex_without: custom[y].wout, capex_with: custom[y].w, rnd: custom[y].rnd, balance: custom[y].balance });
-                else capexYears.push({ year: y, capex_without: 0, capex_with: 0, rnd: 0, balance: 0 });
-            }
-            renderCapexForm();
-        }
-        function renderCapexForm() {
-            const container = document.getElementById('capexDynamicList');
-            if (!container) return;
-            container.innerHTML = '';
-            capexYears.forEach((item, idx) => {
-                const inc = (item.capex_with - item.capex_without) + item.rnd;
-                const total = item.capex_with + item.rnd;
-                const div = document.createElement('div');
-                div.className = 'capex-row';
-                div.innerHTML = `
-                    <div class="capex-year">${item.year}</div>
-                    <div class="capex-field"><label>КВ "без"</label><input type="number" step="0.5" value="${item.capex_without}" class="capex-without-input" data-idx="${idx}"></div>
-                    <div class="capex-field"><label>КВ "с"</label><input type="number" step="0.5" value="${item.capex_with}" class="capex-with-input" data-idx="${idx}"></div>
-                    <div class="capex-field"><label>НИОКР</label><input type="number" step="0.5" value="${item.rnd}" class="capex-rnd-input" data-idx="${idx}"></div>
-                    <div class="capex-field"><label>Постановка на баланс</label><input type="number" step="0.5" value="${item.balance}" class="capex-balance-input" data-idx="${idx}"></div>
-                    <div class="capex-field"><label>Изменение КВ</label><div class="readonly-field" id="inc_disp_${idx}">${inc.toFixed(2)}</div></div>
-                    <div class="capex-field"><label>КВ+НИОКР</label><div class="readonly-field" id="totalrnd_disp_${idx}">${total.toFixed(2)}</div></div>
-                `;
-                container.appendChild(div);
-            });
-            document.querySelectorAll('.capex-without-input').forEach(inp => inp.addEventListener('change', (e) => { let idx = +e.target.dataset.idx; capexYears[idx].capex_without = +e.target.value || 0; refreshRowDisplay(idx); fullRefresh(); }));
-            document.querySelectorAll('.capex-with-input').forEach(inp => inp.addEventListener('change', (e) => { let idx = +e.target.dataset.idx; capexYears[idx].capex_with = +e.target.value || 0; refreshRowDisplay(idx); fullRefresh(); }));
-            document.querySelectorAll('.capex-rnd-input').forEach(inp => inp.addEventListener('change', (e) => { let idx = +e.target.dataset.idx; capexYears[idx].rnd = +e.target.value || 0; refreshRowDisplay(idx); fullRefresh(); }));
-            document.querySelectorAll('.capex-balance-input').forEach(inp => inp.addEventListener('change', (e) => { let idx = +e.target.dataset.idx; capexYears[idx].balance = +e.target.value || 0; fullRefresh(); }));
-            updateCapexTotals();
-        }
-        function refreshRowDisplay(idx) {
-            const item = capexYears[idx];
-            const inc = (item.capex_with - item.capex_without) + item.rnd;
-            const total = item.capex_with + item.rnd;
-            const incDiv = document.getElementById(`inc_disp_${idx}`);
-            const totalDiv = document.getElementById(`totalrnd_disp_${idx}`);
-            if (incDiv) incDiv.innerText = inc.toFixed(2);
-            if (totalDiv) totalDiv.innerText = total.toFixed(2);
-        }
-        function updateCapexTotals() {
-            let sumWithout = capexYears.reduce((s,i)=>s+i.capex_without,0);
-            let sumWith = capexYears.reduce((s,i)=>s+i.capex_with,0);
-            let sumRnd = capexYears.reduce((s,i)=>s+i.rnd,0);
-            let totalInc = capexYears.reduce((s,i)=>s+(i.capex_with - i.capex_without)+i.rnd,0);
-            let totalWithRnd = sumWith + sumRnd;
-            document.getElementById('capex_without_total').value = sumWithout.toFixed(2);
-            document.getElementById('capex_with_total').value = sumWith.toFixed(2);
-            document.getElementById('rnd_total_display').value = sumRnd.toFixed(2);
-            document.getElementById('total_incremental').value = totalInc.toFixed(2);
-            document.getElementById('total_with_rnd').value = totalWithRnd.toFixed(2);
-        }
-
-        // --- Эффекты ---
-        function computeEffects() {
-            let obs = (+document.getElementById('obs_time').value||0) * (+document.getElementById('fuel_cost').value||0) * 2 * (+document.getElementById('speed_kmh').value||0) * (+document.getElementById('fuel_consumption').value||0.08);
-            document.getElementById('obs_effect_display').value = obs.toFixed(2);
-            let topo = (+document.getElementById('topo_cost_per_km').value||0) * (+document.getElementById('topo_km_reduce').value||0);
-            document.getElementById('topo_effect_display').value = topo.toFixed(2);
-            let tech = (+document.getElementById('tech_rate').value||0) * ((+document.getElementById('tech_loss_before').value||0) - (+document.getElementById('tech_loss_after').value||0));
-            document.getElementById('tech_effect_display').value = tech.toFixed(2);
-            let com = (+document.getElementById('com_rate').value||0) * ((+document.getElementById('com_loss_before').value||0) - (+document.getElementById('com_loss_after').value||0));
-            document.getElementById('com_effect_display').value = com.toFixed(2);
-            let supply = ((+document.getElementById('supply_after').value||0) - (+document.getElementById('supply_before').value||0)) * (+document.getElementById('tariff_supply').value||0);
-            document.getElementById('supply_effect_display').value = supply.toFixed(2);
-            let acc = ((+document.getElementById('acc_before').value||0) - (+document.getElementById('acc_after').value||0)) * (+document.getElementById('acc_cost').value||0);
-            document.getElementById('acc_effect_display').value = acc.toFixed(2);
-            let nvos = (+document.getElementById('nvos_before').value||0) - (+document.getElementById('nvos_after').value||0);
-            document.getElementById('nvos_effect_display').value = nvos.toFixed(2);
-            let royalty = (+document.getElementById('royalty_base').value||0) * (+document.getElementById('royalty_rate').value||0) / 100;
-            document.getElementById('royalty_effect_display').value = royalty.toFixed(2);
-            let opex = (+document.getElementById('opex_before').value||0) - (+document.getElementById('opex_after').value||0);
-            document.getElementById('opex_change_display').value = opex.toFixed(2);
-            return { obs, topo, tech, com, supply, acc, nvos, royalty, opexChange: opex };
-        }
-
-        // --- Амортизация ---
-        function getBalanceSchedules() {
-            const usefulLife = +document.getElementById('useful_life').value || 30;
-            let placements = capexYears.filter(c => c.balance > 0).map(c => ({ year: c.year, amount: c.balance }));
-            let minYear = Math.min(...capexYears.map(c=>c.year), ...placements.map(p=>p.year));
-            let maxYear = Math.max(...capexYears.map(c=>c.year), ...placements.map(p=>p.year+usefulLife));
-            let years = []; for (let y=minYear; y<=maxYear; y++) years.push(y);
-            let residualStart = new Map(), annualDepr = new Map();
-            years.forEach(y => { residualStart.set(y,0); annualDepr.set(y,0); });
-            for (let p of placements) {
-                let amount = p.amount, startYear = p.year, deprPerYear = amount/usefulLife;
-                residualStart.set(startYear, (residualStart.get(startYear)||0) + amount);
-                for (let i=1; i<=usefulLife; i++) {
-                    let yr = startYear + i;
-                    if (yr <= maxYear) {
-                        annualDepr.set(yr, (annualDepr.get(yr)||0) + deprPerYear);
-                        residualStart.set(yr, (residualStart.get(yr)||0) + (amount - deprPerYear*i));
-                    }
-                }
-            }
-            let yearsList=[], residualVals=[], deprVals=[];
-            for (let y of years) { yearsList.push(y); residualVals.push(residualStart.get(y)||0); deprVals.push(annualDepr.get(y)||0); }
-            return { years: yearsList, residualValues: residualVals, deprValues: deprVals };
-        }
-
-        let amortChart = null, propTaxChart = null;
-        let netChart=null, cumChart=null, operChart=null, invChart=null;
-
-        function getChartColors() {
-            const isDark = document.body.classList.contains('dark');
-            return {
-                accent: isDark ? '#34c97a' : '#1f7b4d',
-                orange: '#f0a74b',
-                blue: '#2c7eb6',
-                bgFill: isDark ? 'rgba(52,201,122,0.1)' : 'rgba(31,123,77,0.05)',
-                grid: isDark ? '#2d3543' : '#e2e8f0',
-                text: isDark ? '#eef2ff' : '#1a2c3e',
-                secText: isDark ? '#9aa8bf' : '#4a5b6e'
-            };
-        }
-
-        function updateAmortization() {
-            const { years, residualValues, deprValues } = getBalanceSchedules();
-            const tbody = document.querySelector('#amortTable tbody');
-            if (tbody) {
-                tbody.innerHTML = '';
-                for (let i=0; i<years.length; i++) tbody.innerHTML += `<tr><td>${years[i]}</td><td>${residualValues[i].toFixed(2)}</td><td>${deprValues[i].toFixed(2)}</td></tr>`;
-            }
-            const ctx = document.getElementById('amortChart').getContext('2d');
-            if (amortChart) amortChart.destroy();
-            const clr = getChartColors();
-            amortChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: years,
-                    datasets: [
-                        { label: 'Остаточная стоимость (млн руб)', data: residualValues, borderColor: clr.accent, tension: 0.2, fill: false, yAxisID: 'y' },
-                        { label: 'Амортизация (млн руб)', data: deprValues, borderColor: clr.orange, borderDash: [5,5], fill: false, yAxisID: 'y1' }
-                    ]
-                },
-                options: {
-                    responsive: true, maintainAspectRatio: true,
-                    plugins: { legend: { labels: { color: clr.text } } },
-                    scales: {
-                        y: { title: { display: true, text: 'Остаточная стоимость', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } },
-                        y1: { position: 'right', title: { text: 'Амортизация', color: clr.secText }, ticks: { color: clr.text }, grid: { drawOnChartArea: false } }
-                    }
-                }
-            });
-        }
-
-        function updatePropTax() {
-            const { years, residualValues } = getBalanceSchedules();
-            const propRate = (+document.getElementById('prop_tax_rate').value||2.2)/100;
-            let rows=[], taxVals=[], yearList=[];
-            for (let i=0; i<years.length-1; i++) {
-                let start=residualValues[i], end=residualValues[i+1], avg=(start+end)/2, tax=avg*propRate;
-                rows.push({year:years[i], start, avg, tax});
-                yearList.push(years[i]); taxVals.push(tax);
-            }
-            const tbody = document.querySelector('#propTaxTable tbody');
-            if (tbody) {
-                tbody.innerHTML = '';
-                rows.forEach(r => { tbody.innerHTML += `<tr><td>${r.year}</td><td>${r.start.toFixed(2)}</td><td>${r.avg.toFixed(2)}</td><td>${r.tax.toFixed(2)}</td></tr>`; });
-            }
-            if (propTaxChart) propTaxChart.destroy();
-            const ctx = document.getElementById('propTaxChart').getContext('2d');
-            const clr = getChartColors();
-            propTaxChart = new Chart(ctx, {
-                type: 'line',
-                data: { labels: yearList, datasets: [{ label: 'Налог на имущество (млн руб)', data: taxVals, borderColor: clr.accent, backgroundColor: clr.bgFill, fill: true, tension: 0.2 }] },
-                options: {
-                    responsive: true,
-                    plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } },
-                    scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } } }
-                }
-            });
-        }
-
-        function calculateCashFlows() {
-            const effects = computeEffects();
-            const annualBenefit = (effects.obs+effects.topo+effects.tech+effects.com+effects.supply+effects.acc+effects.nvos+effects.royalty+effects.opexChange) / 1e6; // млн руб
-            const profitTax = (+document.getElementById('profit_tax_rate').value||25)/100;
-            const propTaxRate = (+document.getElementById('prop_tax_rate').value||2.2)/100;
-            const discount = (+document.getElementById('discount_rate').value||14)/100;
-            const baseYear = +document.getElementById('base_year').value||2027;
-            const benefitStart = +document.getElementById('benefit_start_year').value||2026;
-            const usefulLife = +document.getElementById('useful_life').value||30;
-            const projectStart = +document.getElementById('project_start').value||2026;
-            let incInv = {};
-            capexYears.forEach(c => { incInv[c.year] = (c.capex_with - c.capex_without) + c.rnd; });
-            const { years, residualValues, deprValues } = getBalanceSchedules();
-            const minY = Math.min(...years, ...Object.keys(incInv).map(Number));
-            const maxY = Math.max(...years, ...Object.keys(incInv).map(Number), benefitStart+usefulLife+2);
-            let allYears = []; for (let y=minY; y<=maxY; y++) allYears.push(y);
-            let deprMap=new Map(), resMap=new Map();
-            for (let i=0; i<years.length; i++) { deprMap.set(years[i], deprValues[i]); resMap.set(years[i], residualValues[i]); }
-            let cashflows=[], cumulative=0, discCum=0, discFlows=[];
-            for (let idx=0; idx<allYears.length; idx++) {
-                let y = allYears[idx];
-                let active = y >= benefitStart;
-                let operIncome = active ? annualBenefit : 0;
-                let depr = deprMap.get(y)||0;
-                let nbv = resMap.get(y)||0;
-                let nextNbv = resMap.get(y+1)||0;
-                let avgVal = (nbv+nextNbv)/2;
-                let propTax = (active && nbv>0) ? avgVal*propTaxRate : 0;
-                let profitBeforeTax = operIncome - depr - propTax;
-                let incomeTax = profitBeforeTax>0 ? profitBeforeTax*profitTax : 0;
-                let ocf = operIncome - propTax - incomeTax;
-                let inv = -(incInv[y]||0);
-                let net = ocf + inv;
-                cumulative += net;
-                let t = y - baseYear;
-                let df = 1 / Math.pow(1+discount, t>=0 ? t : 0);
-                let discNet = net * df;
-                discCum += discNet;
-                discFlows.push({year:y, discNet, discCumulative: discCum});
-                cashflows.push({year:y, ocf:ocf.toFixed(2), icf:inv.toFixed(2), net:net.toFixed(2), cum:cumulative.toFixed(2), disc:discCum.toFixed(2), discRaw:discCum});
-            }
-            let npv = cashflows.length ? cashflows[cashflows.length-1].discRaw : 0;
-            let irr = (()=>{
-                let r=0.05;
-                for(let iter=0;iter<100;iter++){
-                    let npv=0, dnpv=0;
-                    for(let t=0;t<cashflows.length;t++){
-                        let cf = parseFloat(cashflows[t].net);
-                        npv += cf/Math.pow(1+r,t);
-                        dnpv += -t*cf/Math.pow(1+r,t+1);
-                    }
-                    if(Math.abs(npv)<1e-7) return r;
-                    let newR = r - npv/dnpv;
-                    if(Math.abs(newR-r)<1e-7) return newR;
-                    r=newR;
-                    if(r<-0.99) return -0.99;
-                }
-                return r;
-            })();
-            let discPayYear=null, cumD=0;
-            for(let i=0;i<discFlows.length;i++){
-                cumD+=discFlows[i].discNet;
-                if(cumD>=0 && discPayYear===null) discPayYear=discFlows[i].year;
-            }
-            let payback = discPayYear ? (discPayYear-projectStart) : null;
-            return { cashflows, npv, irr: (irr*100).toFixed(2), discountedPayback: payback, benefitAnnual: annualBenefit, discFlows };
-        }
-
-        function displayResults() {
-            const { cashflows, npv, irr, discountedPayback, benefitAnnual, discFlows } = calculateCashFlows();
-            const tbody = document.querySelector('#cashflowTable tbody');
-            tbody.innerHTML = '';
-            cashflows.forEach(cf => {
-                tbody.innerHTML += `<tr><td>${cf.year}</td><td>${cf.ocf}</td><td>${cf.icf}</td><td>${cf.net}</td><td>${cf.cum}</td><td>${cf.disc}</td></tr>`;
-            });
-            const payStr = discountedPayback !== null ? discountedPayback.toFixed(1)+" лет" : "> горизонта";
-            const actualYear = +document.getElementById('actual_effect_year').value;
-            const found = discFlows.find(f=>f.year===actualYear);
-            const actualEffect = found ? found.discCumulative.toFixed(2)+" млн ₽" : "—";
-            document.getElementById('metricsPanel').innerHTML = `
-                <div class="metric-card"><div class="metric-label">NPV</div><div class="metric-value">${npv.toFixed(2)} млн ₽</div></div>
-                <div class="metric-card"><div class="metric-label">IRR</div><div class="metric-value">${irr}%</div></div>
-                <div class="metric-card"><div class="metric-label">Срок окупаемости (диск.)</div><div class="metric-value">${payStr}</div></div>
-                <div class="metric-card"><div class="metric-label">Годовой эффект</div><div class="metric-value">${benefitAnnual.toFixed(2)} млн ₽</div></div>
-                <div class="metric-card highlight"><div class="metric-label">Фактический эффект (на ${actualYear} г.)</div><div class="metric-value">${actualEffect}</div></div>
-            `;
-            updateAnalysisCharts(cashflows, discFlows);
-        }
-
-        function updateAnalysisCharts(cashflows, discFlows) {
-            const years = cashflows.map(cf=>cf.year);
-            const netVals = cashflows.map(cf=>+cf.net);
-            const cumVals = discFlows.map(df=>df.discCumulative);
-            const operVals = cashflows.map(cf=>+cf.ocf);
-            const invVals = cashflows.map(cf=>+cf.icf);
-            const clr = getChartColors();
-            if (netChart) netChart.destroy();
-            netChart = new Chart(document.getElementById('netCashflowChart'), {
-                type: 'bar', data: { labels: years, datasets: [{ label: 'Чистый денежный поток', data: netVals, backgroundColor: clr.accent }] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx)=>`${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-            });
-            if (cumChart) cumChart.destroy();
-            cumChart = new Chart(document.getElementById('cumDiscountedChart'), {
-                type: 'line', data: { labels: years, datasets: [{ label: 'Накопленный дисконтированный', data: cumVals, borderColor: clr.accent, backgroundColor: clr.bgFill, fill: true, tension: 0.2 }] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx)=>`${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-            });
-            if (operChart) operChart.destroy();
-            operChart = new Chart(document.getElementById('operatingCFChart'), {
-                type: 'line', data: { labels: years, datasets: [{ label: 'Операционный поток', data: operVals, borderColor: clr.blue, tension: 0.2 }] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx)=>`${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-            });
-            if (invChart) invChart.destroy();
-            invChart = new Chart(document.getElementById('investingCFChart'), {
-                type: 'bar', data: { labels: years, datasets: [{ label: 'Инвестиционный поток', data: invVals, backgroundColor: clr.orange }] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx)=>`${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-            });
-        }
-
-        function fullRefresh() {
-            updateCapexTotals();
-            updateAmortization();
-            updatePropTax();
-            if (document.getElementById('tab_cashflow').classList.contains('active')) displayResults();
-            if (document.getElementById('tab_analysis').classList.contains('active')) {
-                const { cashflows, discFlows } = calculateCashFlows();
-                updateAnalysisCharts(cashflows, discFlows);
-            }
-        }
-
-        function rebuildCapexYears() {
-            const start = +document.getElementById('project_start').value||2026;
-            const life = +document.getElementById('useful_life').value||30;
-            const maxY = start + life + 5;
-            const old = new Map();
-            capexYears.forEach(c=>old.set(c.year,c));
-            let newArr = [];
-            for (let y=start; y<=maxY; y++) newArr.push(old.has(y) ? old.get(y) : {year:y, capex_without:0, capex_with:0, rnd:0, balance:0});
-            capexYears = newArr;
-            renderCapexForm();
-            fullRefresh();
-        }
-
-        // --- Переключение темы ---
-        const themeBtn = document.getElementById('themeToggle');
-        function setTheme(theme) {
-            if (theme === 'dark') {
-                document.body.classList.add('dark');
-                themeBtn.innerHTML = '<i class="bi bi-sun"></i> Светлая тема';
-            } else {
-                document.body.classList.remove('dark');
-                themeBtn.innerHTML = '<i class="bi bi-moon-stars"></i> Тёмная тема';
-            }
-            localStorage.setItem('theme', theme);
-            // перерисовка всех графиков и таблиц
-            updateAmortization();
-            updatePropTax();
-            if (document.getElementById('tab_cashflow').classList.contains('active')) displayResults();
-            if (document.getElementById('tab_analysis').classList.contains('active')) {
-                const { cashflows, discFlows } = calculateCashFlows();
-                updateAnalysisCharts(cashflows, discFlows);
-            }
-        }
-        const saved = localStorage.getItem('theme');
-        if (saved === 'dark') setTheme('dark');
-        else setTheme('light');
-        themeBtn.addEventListener('click', () => {
-            const isDark = document.body.classList.contains('dark');
-            setTheme(isDark ? 'light' : 'dark');
-        });
-
-        // --- Вкладки ---
-        const allTabs = document.querySelectorAll('.tab-btn:not(#themeToggle)');
-        const contents = document.querySelectorAll('.tab-content');
-        allTabs.forEach(btn => {
-            btn.addEventListener('click', () => {
-                const tabId = btn.getAttribute('data-tab');
-                contents.forEach(c => c.classList.remove('active'));
-                document.getElementById(tabId).classList.add('active');
-                allTabs.forEach(b => b.classList.remove('active'));
-                btn.classList.add('active');
-                if (tabId === 'tab_amort') updateAmortization();
-                if (tabId === 'tab_proptax') updatePropTax();
-                if (tabId === 'tab_cashflow') displayResults();
-                if (tabId === 'tab_analysis') {
-                    const { cashflows, discFlows } = calculateCashFlows();
-                    updateAnalysisCharts(cashflows, discFlows);
-                }
-            });
-        });
-
-        // --- События параметров ---
-        const paramIds = ['project_start','useful_life','benefit_start_year','base_year','discount_rate','profit_tax_rate','prop_tax_rate'];
-        paramIds.forEach(id => {
-            document.getElementById(id)?.addEventListener('change', () => {
-                if (id === 'project_start' || id === 'useful_life') rebuildCapexYears();
-                else fullRefresh();
-            });
-        });
-        document.getElementById('actual_effect_year')?.addEventListener('change', displayResults);
-        document.getElementById('refreshEffectsBtn')?.addEventListener('click', () => { computeEffects(); fullRefresh(); });
-        document.getElementById('addCapexYearBtn')?.addEventListener('click', () => {
-            let lastYear = capexYears.length ? capexYears[capexYears.length-1].year+1 : (+document.getElementById('project_start').value||2026);
-            capexYears.push({year:lastYear, capex_without:0, capex_with:0, rnd:0, balance:0});
-            renderCapexForm();
-            fullRefresh();
-        });
-        document.getElementById('removeLastCapexBtn')?.addEventListener('click', () => {
-            if (capexYears.length > 1) capexYears.pop();
-            renderCapexForm();
-            fullRefresh();
-        });
-
-        initCapexYears();
-        computeEffects();
-        fullRefresh();
-    })();
-</script>
-</body>
-</html>
+<!-- Подключаем JavaScript калькулятора -->
+<script src="{% static 'src/js/script.js' %}"></script>
+{% endblock %}
