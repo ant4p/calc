@@ -349,7 +349,7 @@ function displayResults() {
             <div class="metric-card"><div class="metric-label">IRR</div><div class="metric-value">${irr}%</div></div>
             <div class="metric-card"><div class="metric-label">Срок окупаемости (диск.)</div><div class="metric-value">${payStr}</div></div>
             <div class="metric-card"><div class="metric-label">Годовой эффект</div><div class="metric-value">${formatNumberWithSpaces(benefitAnnual, 2)} млн ₽</div></div>
-            <div class="metric-card highlight"><div class="metric-label">Фактический эффект (на ${actualYear} г.)</div><div class="metric-value">${actualEffect}</div></div>
+            <div class="metric-card highlight"><div class="metric-label">Планируемый эффект (на ${actualYear} г.)</div><div class="metric-value">${actualEffect}</div></div>
         `;
     }
     updateAnalysisCharts(cashflows, discFlows, discPayYear);
