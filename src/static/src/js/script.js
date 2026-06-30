@@ -174,17 +174,21 @@ function getBalanceSchedules() {
 }
 
 let amortChart = null, propTaxChart = null;
-let netChart = null, cumChart = null, operChart = null, invChart = null, donutChart = null, capexBarsChart = null, discountedCFChart = null, compareCapexChart = null;
+let netChart = null, cumChart = null, operChart = null, invChart = null;
 
 function getChartColors() {
     const isDark = document.body.classList.contains('dark');
     return {
-        accent: isDark ? '#34c97a' : '#1f7b4d',
-        orange: '#f0a74b',
-        blue: '#2c7eb6',
-        bgFill: isDark ? 'rgba(52,201,122,0.1)' : 'rgba(31,123,77,0.05)',
+        primary: isDark ? '#5b8cdf' : '#19307e',
+        secondary: isDark ? '#8bb4f0' : '#2075de',
+        tertiary: '#28ace2',
+        quaternary: '#521b93',
+        quinary: '#70ac47',
+        senary: '#ffc000',
+        highlight: '#a2d5f2',
+        bgFill: isDark ? 'rgba(91,140,223,0.1)' : 'rgba(25,48,126,0.05)',
         grid: isDark ? '#2d3543' : '#e2e8f0',
-        text: isDark ? '#eef2ff' : '#1a2c3e',
+        text: isDark ? '#eef2ff' : '#19307e',
         secText: isDark ? '#9aa8bf' : '#4a5b6e'
     };
 }
@@ -207,8 +211,8 @@ function updateAmortization() {
             data: {
                 labels: years,
                 datasets: [
-                    { label: 'Остаточная стоимость (млн руб)', data: residualValues, borderColor: clr.accent, tension: 0.2, fill: false, yAxisID: 'y' },
-                    { label: 'Амортизация (млн руб)', data: deprValues, borderColor: clr.orange, borderDash: [5, 5], fill: false, yAxisID: 'y1' }
+                    { label: 'Остаточная стоимость (млн руб)', data: residualValues, borderColor: clr.primary, tension: 0.2, fill: false, yAxisID: 'y' },
+                    { label: 'Амортизация (млн руб)', data: deprValues, borderColor: clr.senary, borderDash: [5, 5], fill: false, yAxisID: 'y1' }
                 ]
             },
             options: {
@@ -246,7 +250,7 @@ function updatePropTax() {
         const clr = getChartColors();
         propTaxChart = new Chart(ctx, {
             type: 'line',
-            data: { labels: yearList, datasets: [{ label: 'Налог на имущество (млн руб)', data: taxVals, borderColor: clr.accent, backgroundColor: clr.bgFill, fill: true, tension: 0.2 }] },
+            data: { labels: yearList, datasets: [{ label: 'Налог на имущество (млн руб)', data: taxVals, borderColor: clr.primary, backgroundColor: clr.bgFill, fill: true, tension: 0.2 }] },
             options: {
                 responsive: true,
                 plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } },
@@ -322,11 +326,11 @@ function calculateCashFlows() {
         if (cumD >= 0 && discPayYear === null) discPayYear = discFlows[i].year;
     }
     let payback = discPayYear ? (discPayYear - projectStart) : null;
-    return { cashflows, npv, irr: (irr * 100).toFixed(2), discountedPayback: payback, benefitAnnual: annualBenefit, discFlows, incInv };
+    return { cashflows, npv, irr: (irr * 100).toFixed(2), discountedPayback: payback, benefitAnnual: annualBenefit, discFlows, incInv, discPayYear };
 }
 
 function displayResults() {
-    const { cashflows, npv, irr, discountedPayback, benefitAnnual, discFlows } = calculateCashFlows();
+    const { cashflows, npv, irr, discountedPayback, benefitAnnual, discFlows, discPayYear } = calculateCashFlows();
     const tbody = document.querySelector('#cashflowTable tbody');
     if (tbody) {
         tbody.innerHTML = '';
@@ -348,10 +352,12 @@ function displayResults() {
             <div class="metric-card highlight"><div class="metric-label">Фактический эффект (на ${actualYear} г.)</div><div class="metric-value">${actualEffect}</div></div>
         `;
     }
-    updateAnalysisCharts(cashflows, discFlows);
+    updateAnalysisCharts(cashflows, discFlows, discPayYear);
 }
 
-function updateAnalysisCharts(cashflows, discFlows) {
+// ... остальные функции без изменений ...
+
+function updateAnalysisCharts(cashflows, discFlows, discPayYear) {
     try {
         const years = cashflows.map(cf => cf.year);
         const netVals = cashflows.map(cf => cf.net);
@@ -368,83 +374,127 @@ function updateAnalysisCharts(cashflows, discFlows) {
             createFunc(ctx);
         };
 
+        // 1. Накопленный дисконтированный поток (на всю ширину, с точкой окупаемости)
+        safeChart('cumDiscountedChart', (ctx) => {
+            if (cumChart) cumChart.destroy();
+            // Основной набор данных
+            let dataSets = [{
+                label: 'Накопленный дисконтированный поток',
+                data: cumVals,
+                borderColor: clr.secondary,
+                backgroundColor: clr.bgFill,
+                fill: true,
+                tension: 0.2
+            }];
+            // Если есть точка окупаемости, добавим маркер
+            if (discPayYear) {
+                const idx = years.indexOf(discPayYear);
+                if (idx !== -1) {
+                    const payValue = cumVals[idx];
+                    dataSets.push({
+                        label: 'Точка окупаемости',
+                        data: years.map((y, i) => i === idx ? payValue : null),
+                        borderColor: '#00aa00',
+                        backgroundColor: '#00aa00',
+                        pointRadius: 10,
+                        pointHoverRadius: 14,
+                        showLine: false,
+                        pointStyle: 'circle',
+                        borderWidth: 2,
+                        borderColor: '#006600'
+                    });
+                }
+            }
+            // Плагин для вертикальной линии и подписи
+            const annotationPlugin = {
+                id: 'annotation',
+                afterDraw(chart) {
+                    if (!discPayYear) return;
+                    const xScale = chart.scales.x;
+                    const yScale = chart.scales.y;
+                    const idx = years.indexOf(discPayYear);
+                    if (idx === -1) return;
+                    const x = xScale.getPixelForValue(discPayYear);
+                    const y0 = yScale.getPixelForValue(0);
+                    const ctx2 = chart.ctx;
+                    ctx2.save();
+                    // Вертикальная пунктирная линия
+                    ctx2.beginPath();
+                    ctx2.moveTo(x, yScale.top);
+                    ctx2.lineTo(x, yScale.bottom);
+                    ctx2.strokeStyle = '#00aa00';
+                    ctx2.lineWidth = 2;
+                    ctx2.setLineDash([6, 4]);
+                    ctx2.stroke();
+                    // Подпись
+                    ctx2.fillStyle = '#00aa00';
+                    ctx2.font = 'bold 14px Inter, sans-serif';
+                    ctx2.textAlign = 'center';
+                    ctx2.fillText('Точка окупаемости', x, yScale.top - 12);
+                    ctx2.restore();
+                }
+            };
+
+            cumChart = new Chart(ctx, {
+                type: 'line',
+                data: { labels: years, datasets: dataSets },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: { labels: { color: clr.text } },
+                        tooltip: { callbacks: { label: (ctx) => `${ctx.raw?.toFixed(2)} млн руб` } }
+                    },
+                    scales: {
+                        y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } },
+                        x: { ticks: { color: clr.text }, grid: { color: clr.grid } }
+                    }
+                },
+                plugins: [annotationPlugin]
+            });
+        });
+
+        // 2. Чистый денежный поток
         safeChart('netCashflowChart', (ctx) => {
             if (netChart) netChart.destroy();
             netChart = new Chart(ctx, {
-                type: 'bar', data: { labels: years, datasets: [{ label: 'Чистый денежный поток', data: netVals, backgroundColor: clr.accent }] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
+                type: 'bar',
+                data: { labels: years, datasets: [{ label: 'Чистый денежный поток', data: netVals, backgroundColor: clr.primary }] },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } },
+                    scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } }
+                }
             });
         });
-        safeChart('cumDiscountedChart', (ctx) => {
-            if (cumChart) cumChart.destroy();
-            cumChart = new Chart(ctx, {
-                type: 'line', data: { labels: years, datasets: [{ label: 'Накопленный дисконтированный', data: cumVals, borderColor: clr.accent, backgroundColor: clr.bgFill, fill: true, tension: 0.2 }] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-            });
-        });
+
+        // 3. Операционный поток
         safeChart('operatingCFChart', (ctx) => {
             if (operChart) operChart.destroy();
             operChart = new Chart(ctx, {
-                type: 'line', data: { labels: years, datasets: [{ label: 'Операционный поток', data: operVals, borderColor: clr.blue, tension: 0.2 }] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
+                type: 'line',
+                data: { labels: years, datasets: [{ label: 'Операционный поток', data: operVals, borderColor: clr.tertiary, tension: 0.2 }] },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } },
+                    scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } }
+                }
             });
         });
+
+        // 4. Инвестиционный поток
         safeChart('investingCFChart', (ctx) => {
             if (invChart) invChart.destroy();
             invChart = new Chart(ctx, {
-                type: 'bar', data: { labels: years, datasets: [{ label: 'Инвестиционный поток', data: invVals, backgroundColor: clr.orange }] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-            });
-        });
-
-        const effectValues = updateSummary();
-        const effectLabels = ['Наблюдаемость', 'Топология сети', 'Тех. потери', 'Ком. потери', 'Увел. отпуска', 'Промбезопасность', 'НВОС', 'Роялти', 'Экспл. затраты'];
-        const effectData = [effectValues.obs, effectValues.topo, effectValues.tech, effectValues.com, effectValues.supply, effectValues.acc, effectValues.nvos, effectValues.royalty, effectValues.opex];
-        safeChart('donutEffectsChart', (ctx) => {
-            if (donutChart) donutChart.destroy();
-            donutChart = new Chart(ctx, {
-                type: 'doughnut',
-                data: { labels: effectLabels, datasets: [{ data: effectData, backgroundColor: ['#1f7b4d', '#34c97a', '#f0a74b', '#2c7eb6', '#a569bd', '#e67e22', '#27ae60', '#f39c12', '#7f8c8d'], borderWidth: 0 }] },
-                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { position: 'bottom', labels: { color: getChartColors().text, font: { size: 10 } } }, tooltip: { callbacks: { label: (ctx) => `${ctx.label}: ${formatNumberWithSpaces(ctx.raw, 0)} руб (${((ctx.raw / effectValues.totalRub) * 100).toFixed(1)}%)` } } } }
-            });
-        });
-
-        const { incInv } = calculateCashFlows();
-        const capexYearsList = Object.keys(incInv).map(Number).sort((a, b) => a - b);
-        const capexData = capexYearsList.map(y => incInv[y]);
-        safeChart('capexBarsChart', (ctx) => {
-            if (capexBarsChart) capexBarsChart.destroy();
-            capexBarsChart = new Chart(ctx, {
                 type: 'bar',
-                data: { labels: capexYearsList, datasets: [{ label: 'Изменение КВ (прирост) млн руб', data: capexData, backgroundColor: clr.accent }] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
+                data: { labels: years, datasets: [{ label: 'Инвестиционный поток', data: invVals, backgroundColor: clr.senary }] },
+                options: {
+                    responsive: true,
+                    plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } },
+                    scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } }
+                }
             });
         });
 
-        const discNetVals = discFlows.map(df => df.discNet);
-        safeChart('discountedCFChart', (ctx) => {
-            if (discountedCFChart) discountedCFChart.destroy();
-            discountedCFChart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: years, datasets: [{ label: 'Дисконтированный поток (млн руб)', data: discNetVals, backgroundColor: clr.blue }] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-            });
-        });
-
-        const capexWithVals = capexYears.map(c => c.capex_with);
-        const capexWithoutVals = capexYears.map(c => c.capex_without);
-        const capexYearsAll = capexYears.map(c => c.year);
-        safeChart('compareCapexChart', (ctx) => {
-            if (compareCapexChart) compareCapexChart.destroy();
-            compareCapexChart = new Chart(ctx, {
-                type: 'bar',
-                data: { labels: capexYearsAll, datasets: [
-                    { label: 'КВ "с проектом" (млн руб)', data: capexWithVals, backgroundColor: clr.accent },
-                    { label: 'КВ "без проекта" (млн руб)', data: capexWithoutVals, backgroundColor: clr.orange }
-                ] },
-                options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.dataset.label}: ${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } }
-            });
-        });
     } catch (e) { console.warn("Ошибка при построении графиков", e); }
 }
 
@@ -454,8 +504,8 @@ function fullRefresh() {
     updatePropTax();
     if (document.getElementById('tab_cashflow').classList.contains('active')) displayResults();
     if (document.getElementById('tab_analysis').classList.contains('active')) {
-        const { cashflows, discFlows } = calculateCashFlows();
-        updateAnalysisCharts(cashflows, discFlows);
+        const { cashflows, discFlows, discPayYear } = calculateCashFlows();
+        updateAnalysisCharts(cashflows, discFlows, discPayYear);
     }
     updateSummary();
 }
@@ -482,18 +532,18 @@ document.addEventListener('DOMContentLoaded', function() {
     function setTheme(theme) {
         if (theme === 'dark') {
             document.body.classList.add('dark');
-            themeBtn.innerHTML = '<i class="bi bi-sun"></i> Светлая тема';
+            themeBtn.innerHTML = '<i class="bi bi-sun"></i>';
         } else {
             document.body.classList.remove('dark');
-            themeBtn.innerHTML = '<i class="bi bi-moon-stars"></i> Тёмная тема';
+            themeBtn.innerHTML = '<i class="bi bi-moon-stars"></i>';
         }
         localStorage.setItem('theme', theme);
         updateAmortization();
         updatePropTax();
         if (document.getElementById('tab_cashflow').classList.contains('active')) displayResults();
         if (document.getElementById('tab_analysis').classList.contains('active')) {
-            const { cashflows, discFlows } = calculateCashFlows();
-            updateAnalysisCharts(cashflows, discFlows);
+            const { cashflows, discFlows, discPayYear } = calculateCashFlows();
+            updateAnalysisCharts(cashflows, discFlows, discPayYear);
         }
     }
     const saved = localStorage.getItem('theme');
@@ -518,11 +568,15 @@ document.addEventListener('DOMContentLoaded', function() {
             if (tabId === 'tab_proptax') updatePropTax();
             if (tabId === 'tab_cashflow') displayResults();
             if (tabId === 'tab_analysis') {
-                const { cashflows, discFlows } = calculateCashFlows();
-                updateAnalysisCharts(cashflows, discFlows);
+                const { cashflows, discFlows, discPayYear } = calculateCashFlows();
+                updateAnalysisCharts(cashflows, discFlows, discPayYear);
             }
         });
     });
+    // Активная вкладка по умолчанию — Параметры
+    document.querySelector('.tab-btn[data-tab="tab_params"]')?.classList.add('active');
+    document.getElementById('tab_params')?.classList.add('active');
+    contents.forEach(c => { if (c.id !== 'tab_params') c.classList.remove('active'); });
 
     const paramIds = ['project_start', 'useful_life', 'benefit_start_year', 'base_year', 'discount_rate', 'profit_tax_rate', 'prop_tax_rate'];
     paramIds.forEach(id => {

@@ -13,14 +13,14 @@
 {% block content %}
 <div class="app-container">
     <div class="tabs">
-        <button class="tab-btn active" data-tab="tab_effects"><i class="bi bi-calculator-fill"></i> Калькулятор эффектов</button>
-        <button class="tab-btn" data-tab="tab_params"><i class="bi bi-sliders2"></i> Параметры</button>
+        <button class="tab-btn active" data-tab="tab_params"><i class="bi bi-sliders2"></i> Параметры</button>
+        <button class="tab-btn" data-tab="tab_effects"><i class="bi bi-calculator-fill"></i> Калькулятор эффектов</button>
         <button class="tab-btn" data-tab="tab_capex"><i class="bi bi-building"></i> Капитальные вложения</button>
         <button class="tab-btn" data-tab="tab_amort"><i class="bi bi-graph-down"></i> Амортизация</button>
         <button class="tab-btn" data-tab="tab_proptax"><i class="bi bi-bank"></i> Налог на имущество</button>
         <button class="tab-btn" data-tab="tab_cashflow"><i class="bi bi-cash-stack"></i> Денежный поток</button>
         <button class="tab-btn" data-tab="tab_analysis"><i class="bi bi-bar-chart-steps"></i> Анализ</button>
-        <button class="theme-toggle" id="themeToggle"><i class="bi bi-moon-stars"></i> Тёмная тема</button>
+        <button class="theme-toggle" id="themeToggle"><i class="bi bi-moon-stars"></i></button>
     </div>
 
     <!-- Вкладка Эффекты -->
@@ -28,8 +28,9 @@
         <div class="effects-header">
             <div class="summary-module" id="effectsSummary">
                 
-                <div class="summary-item"><span class="label">рублей</span><span class="value" id="totalEffectRub">0</span></div>
-                <div class="summary-item highlight"><span class="label">≈ млн ₽</span><span class="value" id="totalEffectMln">0.00</span></div>
+                <div class="summary-item"><span class="value" id="totalEffectRub">0</span><span class="label">рублей</span></div>
+                <!-- <div class="summary-item highlight"><span class="value" id="totalEffectMln">0.00</span><span class="label">≈ млн ₽</span></div> -->
+                <div class="summary-item"><span class="value" >ежегодно</span><span class="label"></span></div>
             </div>
         </div>
         <div class="form-grid">
@@ -87,22 +88,42 @@
         </div>
     </div>
 
-    <!-- Вкладка Параметры -->
-    <div id="tab_params" class="tab-content">
-        <div class="params-grid">
-            <div class="param-card"><div class="card-title"><i class="bi bi-pencil-square"></i> Наименование проекта</div><div class="input-row"><input type="text" id="project_name" value="Инновационный проект"></div></div>
-            <div class="param-card"><div class="card-title"><i class="bi bi-box-seam"></i> Оборудование "с проектом"</div><div class="input-row"><input type="text" id="equipment_with" value="Инновационное оборудование"></div></div>
-            <div class="param-card"><div class="card-title"><i class="bi bi-box"></i> Оборудование "без проекта"</div><div class="input-row"><input type="text" id="equipment_without" value="Традиционное оборудование"></div></div>
-            <div class="param-card"><div class="card-title"><i class="bi bi-percent"></i> Норма дисконта (%)</div><div class="input-row"><input type="number" id="discount_rate" value="14"></div></div>
-            <div class="param-card"><div class="card-title"><i class="bi bi-calendar"></i> Год приведения</div><div class="input-row"><input type="number" id="base_year" value="2027"></div></div>
-            <div class="param-card"><div class="card-title"><i class="bi bi-calendar-plus"></i> Год начала проекта</div><div class="input-row"><input type="number" id="project_start" value="2026"></div></div>
-            <div class="param-card"><div class="card-title"><i class="bi bi-hourglass-split"></i> Период НИОКР (лет)</div><div class="input-row"><input type="number" id="rnd_period" value="5"></div></div>
-            <div class="param-card"><div class="card-title"><i class="bi bi-clock-history"></i> Срок полезного использования (лет)</div><div class="input-row"><input type="number" id="useful_life" value="30"></div></div>
-            <div class="param-card"><div class="card-title"><i class="bi bi-building"></i> Налог на имущество (%)</div><div class="input-row"><input type="number" id="prop_tax_rate" value="2.2"></div></div>
-            <div class="param-card"><div class="card-title"><i class="bi bi-graph-up"></i> Налог на прибыль (%)</div><div class="input-row"><input type="number" id="profit_tax_rate" value="25"></div></div>
-            <div class="param-card"><div class="card-title"><i class="bi bi-play-circle"></i> Год старта эффектов</div><div class="input-row"><input type="number" id="benefit_start_year" value="2026"></div></div>
+   <!-- Вкладка Параметры -->
+<div id="tab_params" class="tab-content">
+    <div class="params-container">
+        <!-- Блок 1: Информация о проекте -->
+        <div class="param-block">
+            <div class="param-block-title"><i class="bi bi-info-circle"></i> Информация о проекте</div>
+            <div class="param-block-grid">
+                <div class="param-card"><div class="card-title"><i class="bi bi-pencil-square"></i> Наименование проекта</div><div class="input-row"><input type="text" id="project_name" value="Инновационный проект"></div></div>
+                <div class="param-card"><div class="card-title"><i class="bi bi-box-seam"></i> Оборудование "с проектом"</div><div class="input-row"><input type="text" id="equipment_with" value="Инновационное оборудование"></div></div>
+                <div class="param-card"><div class="card-title"><i class="bi bi-box"></i> Оборудование "без проекта"</div><div class="input-row"><input type="text" id="equipment_without" value="Традиционное оборудование"></div></div>
+            </div>
+        </div>
+
+        <!-- Блок 2: Временные параметры -->
+        <div class="param-block">
+            <div class="param-block-title"><i class="bi bi-clock-history"></i> Временные параметры</div>
+            <div class="param-block-grid">
+                <div class="param-card"><div class="card-title"><i class="bi bi-calendar-plus"></i> Год начала проекта</div><div class="input-row"><input type="number" id="project_start" value="2026"></div></div>
+                <div class="param-card"><div class="card-title"><i class="bi bi-calendar"></i> Год приведения</div><div class="input-row"><input type="number" id="base_year" value="2027"></div></div>
+                <div class="param-card"><div class="card-title"><i class="bi bi-clock-history"></i> Срок полезного использования (лет)</div><div class="input-row"><input type="number" id="useful_life" value="30"></div></div>
+                <div class="param-card"><div class="card-title"><i class="bi bi-hourglass-split"></i> Период НИОКР (лет)</div><div class="input-row"><input type="number" id="rnd_period" value="5"></div></div>
+                <div class="param-card"><div class="card-title"><i class="bi bi-play-circle"></i> Год старта эффектов (ввод)</div><div class="input-row"><input type="number" id="benefit_start_year" value="2026"></div></div>
+            </div>
+        </div>
+
+        <!-- Блок 3: Финансовые параметры -->
+        <div class="param-block">
+            <div class="param-block-title"><i class="bi bi-graph-up-arrow"></i> Финансовые параметры</div>
+            <div class="param-block-grid">
+                <div class="param-card"><div class="card-title"><i class="bi bi-percent"></i> Норма дисконта (%)</div><div class="input-row"><input type="number" id="discount_rate" value="14" step="0.5"></div></div>
+                <div class="param-card"><div class="card-title"><i class="bi bi-graph-up"></i> Налог на прибыль (%)</div><div class="input-row"><input type="number" id="profit_tax_rate" value="25" step="1"></div></div>
+                <div class="param-card"><div class="card-title"><i class="bi bi-building"></i> Налог на имущество (%)</div><div class="input-row"><input type="number" id="prop_tax_rate" value="2.2" step="0.1"></div></div>
+            </div>
         </div>
     </div>
+</div>
 
     <!-- Вкладка Капитальные вложения -->
     <div id="tab_capex" class="tab-content">
@@ -165,22 +186,23 @@
         </div>
     </div>
 
-    <!-- Вкладка Анализ -->
-    <div id="tab_analysis" class="tab-content">
-        <div class="card">
-            <div class="card-title">Графический анализ</div>
-            <div class="analysis-grid">
-                <div class="analysis-chart-container"><canvas id="netCashflowChart"></canvas><div style="text-align:center;">Чистый денежный поток</div></div>
-                <div class="analysis-chart-container"><canvas id="cumDiscountedChart"></canvas><div style="text-align:center;">Накопленный дисконтированный</div></div>
-                <div class="analysis-chart-container"><canvas id="operatingCFChart"></canvas><div style="text-align:center;">Операционный поток</div></div>
-                <div class="analysis-chart-container"><canvas id="investingCFChart"></canvas><div style="text-align:center;">Инвестиционный поток</div></div>
-                <div class="analysis-chart-container"><canvas id="donutEffectsChart"></canvas><div style="text-align:center;">Структура годового эффекта</div></div>
-                <div class="analysis-chart-container"><canvas id="capexBarsChart"></canvas><div style="text-align:center;">Капитальные вложения (прирост) по годам</div></div>
-                <div class="analysis-chart-container"><canvas id="discountedCFChart"></canvas><div style="text-align:center;">Дисконтированный денежный поток по годам</div></div>
-                <div class="analysis-chart-container"><canvas id="compareCapexChart"></canvas><div style="text-align:center;">Сравнение КВ "с проектом" и "без проекта"</div></div>
-            </div>
+<!-- Вкладка Анализ -->
+<!-- Вкладка Анализ -->
+<div id="tab_analysis" class="tab-content">
+    <div class="card">
+        <div class="card-title">Графический анализ</div>
+        <!-- Первый график на всю ширину -->
+        <div class="analysis-grid-full">
+            <div class="analysis-chart-container"><canvas id="cumDiscountedChart"></canvas><div style="text-align:center;">Накопленный дисконтированный поток</div></div>
+        </div>
+        <!-- Остальные три графика в ряд -->
+        <div class="analysis-grid">
+            <div class="analysis-chart-container"><canvas id="netCashflowChart"></canvas><div style="text-align:center;">Чистый денежный поток</div></div>
+            <div class="analysis-chart-container"><canvas id="operatingCFChart"></canvas><div style="text-align:center;">Операционный поток</div></div>
+            <div class="analysis-chart-container"><canvas id="investingCFChart"></canvas><div style="text-align:center;">Инвестиционный поток</div></div>
         </div>
     </div>
-    <footer>Расчетный модуль — автоматическое обновление • Переключение темы</footer>
+</div>
+    <footer>Модуль расчета инновационной эффективности</footer>
 </div>
 {% endblock %}

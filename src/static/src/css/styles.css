@@ -9,21 +9,25 @@
     --bg-surface: #ffffff;
     --bg-card: #ffffff;
     --border-subtle: #e9edf2;
-    --text-primary: #1a2c3e;
+    --text-primary: #000000;
     --text-secondary: #4a5b6e;
-    --accent-green: #1f7b4d;
-    --accent-green-dark: #146b41;
-    --accent-hover: #0f5634;
+    --accent-primary: #19307e;
+    --accent-secondary: #2075de;
+    --accent-tertiary: #28ace2;
+    --accent-quaternary: #521b93;
+    --accent-quinary: #70ac47;
+    --accent-senary: #ffc000;
+    --highlight-bg: #a2d5f2;
     --readonly-bg: #f5f9fc;
-    --btn-gradient-start: #1f7b4d;
-    --btn-gradient-end: #146b41;
+    --btn-gradient-start: #19307e;
+    --btn-gradient-end: #2075de;
     --btn-danger-start: #778f87;
     --btn-danger-end: #5b6f66;
     --table-header-bg: #f8fafc;
-    --metric-bg: #fbfefc;
+    --metric-bg: #f7fbfc;
     --metric-border: #e2edf0;
     --chart-grid: #e2e8f0;
-    --chart-text: #1a2c3e;
+    --chart-text: #19307e;
     --chart-secondary-text: #4a5b6e;
 }
 
@@ -34,12 +38,16 @@ body.dark {
     --border-subtle: #2d3543;
     --text-primary: #eef2ff;
     --text-secondary: #9aa8bf;
-    --accent-green: #34c97a;
-    --accent-green-dark: #2a9e62;
-    --accent-hover: #42d488;
+    --accent-primary: #5b8cdf;
+    --accent-secondary: #8bb4f0;
+    --accent-tertiary: #6fc8f2;
+    --accent-quaternary: #9b7bcf;
+    --accent-quinary: #8fc77a;
+    --accent-senary: #f5d76e;
+    --highlight-bg: #2a4a6e;
     --readonly-bg: #1e242f;
-    --btn-gradient-start: #34c97a;
-    --btn-gradient-end: #2a9e62;
+    --btn-gradient-start: #5b8cdf;
+    --btn-gradient-end: #8bb4f0;
     --btn-danger-start: #a56b6b;
     --btn-danger-end: #7a4d4d;
     --table-header-bg: #1e2531;
@@ -94,58 +102,55 @@ body {
     transition: all 0.2s;
 }
 
-.tab-btn[data-tab="tab_cashflow"] {
-    border: 2px solid var(--accent-green);
-    border-radius: 2rem;
-    background: rgba(31,123,77,0.08);
-    margin: 0.3rem 0.2rem;
-    padding: 0.6rem 1.2rem;
-    transition: none;
-}
-body.dark .tab-btn[data-tab="tab_cashflow"] {
-    background: rgba(52,201,122,0.12);
-}
-.tab-btn[data-tab="tab_cashflow"]:hover {
-    background: rgba(31,123,77,0.08);
-    color: var(--text-secondary);
-    transform: none;
-}
-.tab-btn[data-tab="tab_cashflow"].active {
-    background: var(--accent-green);
-    color: white;
-    border-color: var(--accent-green);
+.tab-btn i { font-size: 1.1rem; }
+
+.tab-btn.active {
+    color: var(--accent-primary);
+    border-bottom-color: var(--accent-secondary);
 }
 
-.tab-btn i { font-size: 1.1rem; }
-.tab-btn.active {
-    color: var(--accent-green);
-    border-bottom-color: var(--accent-green);
-}
 .tab-btn:hover:not(.active):not([data-tab="tab_cashflow"]) {
-    color: var(--accent-green);
-    background: rgba(31,123,77,0.08);
+    background: var(--highlight-bg);
+    color: var(--text-primary);
     border-radius: 1rem 1rem 0 0;
 }
 
+/* Специальная вкладка Денежный поток */
+.tab-btn[data-tab="tab_cashflow"] {
+    border: 1px solid var(--accent-secondary);
+    border-radius: 2rem;
+    background: rgba(162, 213, 242, 0.2);
+    margin: 0.3rem 0.2rem;
+    padding: 0.6rem 1.2rem;
+}
+.tab-btn[data-tab="tab_cashflow"]:hover {
+    background: var(--highlight-bg);
+    border-color: var(--accent-primary);
+    transform: none;
+}
+.tab-btn[data-tab="tab_cashflow"].active {
+    background: var(--highlight-bg);
+    border-color: var(--accent-primary);
+    color: var(--text-primary);
+}
+
+/* Переключатель темы — иконка */
 .theme-toggle {
     margin-left: auto;
     background: transparent;
     border: 1px solid var(--border-subtle);
     border-radius: 2rem;
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-    font-weight: 500;
+    padding: 0.5rem 0.9rem;
+    font-size: 1.2rem;
     color: var(--text-primary);
     cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 0.5rem;
     transition: all 0.2s;
+    line-height: 1;
 }
 .theme-toggle:hover {
-    background: var(--accent-green);
-    border-color: var(--accent-green);
-    color: white;
+    background: var(--highlight-bg);
+    border-color: var(--accent-secondary);
+    color: var(--text-primary);
 }
 
 .tab-content {
@@ -155,6 +160,7 @@ body.dark .tab-btn[data-tab="tab_cashflow"] {
     animation: fadeSlide 0.2s ease-out;
 }
 .tab-content.active { display: block; }
+
 @keyframes fadeSlide {
     from { opacity: 0; transform: translateY(6px);}
     to { opacity: 1; transform: translateY(0);}
@@ -166,6 +172,7 @@ body.dark .tab-btn[data-tab="tab_cashflow"] {
     gap: 1.5rem;
     margin-bottom: 2rem;
 }
+
 .card {
     background: var(--bg-card);
     border: 1px solid var(--border-subtle);
@@ -175,20 +182,22 @@ body.dark .tab-btn[data-tab="tab_cashflow"] {
     transition: all 0.2s;
 }
 .card:hover {
-    border-color: var(--accent-green);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    border-color: var(--accent-secondary);
+    box-shadow: 0 8px 20px rgba(32, 117, 222, 0.15);
 }
+
 .card-title {
     font-weight: 600;
     font-size: 1rem;
     margin-bottom: 1.2rem;
-    color: var(--accent-green);
+    color: var(--accent-primary);
     display: flex;
     align-items: center;
     gap: 0.6rem;
-    border-left: 3px solid var(--accent-green);
+    border-left: 3px solid var(--accent-secondary);
     padding-left: 0.85rem;
 }
+
 .input-row {
     display: flex;
     flex-wrap: wrap;
@@ -214,15 +223,16 @@ body.dark .tab-btn[data-tab="tab_cashflow"] {
     color: var(--text-primary);
 }
 .input-row input:focus, .input-row select:focus {
-    border-color: var(--accent-green);
+    border-color: var(--accent-secondary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(31,123,77,0.15);
+    box-shadow: 0 0 0 3px rgba(32, 117, 222, 0.2);
 }
 .input-row input[readonly] {
     background: var(--readonly-bg);
     font-weight: 500;
-    color: var(--accent-green);
+    color: var(--accent-primary);
 }
+
 .table-wrapper {
     overflow-x: auto;
     margin-top: 1rem;
@@ -248,7 +258,8 @@ td {
     border-bottom: 1px solid var(--border-subtle);
     color: var(--text-primary);
 }
-tr:hover td { background: rgba(31,123,77,0.05); }
+tr:hover td { background: var(--highlight-bg); }
+
 .metrics {
     display: flex;
     flex-wrap: wrap;
@@ -283,13 +294,20 @@ tr:hover td { background: rgba(31,123,77,0.05); }
 .metric-value {
     font-size: 1.5rem;
     font-weight: 700;
-    color: var(--accent-green);
+    color: var(--accent-primary);
 }
+
+/* Изменённый блок "Фактический эффект" — без заливки, только рамка */
 .metric-card.highlight {
-    background: rgba(31,123,77,0.1);
-    border-color: var(--accent-green);
+    background: transparent;
+    border: 2px solid var(--accent-secondary);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.05);
 }
-.metric-card.highlight .metric-value { font-size: 1.9rem; }
+.metric-card.highlight .metric-value {
+    color: var(--accent-primary);
+    font-size: 1.9rem;
+}
+
 button.calc-btn {
     background: linear-gradient(100deg, var(--btn-gradient-start), var(--btn-gradient-end));
     color: white;
@@ -304,11 +322,13 @@ button.calc-btn {
     transition: all 0.2s;
 }
 button.calc-btn:hover {
-    background: linear-gradient(100deg, var(--accent-hover), var(--btn-gradient-start));
+    background: linear-gradient(100deg, var(--accent-secondary), var(--btn-gradient-start));
     transform: scale(0.98);
 }
+
 hr { margin: 1rem 0; border-color: var(--border-subtle); }
 canvas { max-height: 320px; width: 100%; background: var(--bg-surface); border-radius: 1rem; padding: 0.25rem; }
+
 .capex-grid { display: flex; flex-direction: column; gap: 0.8rem; }
 .capex-row {
     display: flex;
@@ -320,13 +340,13 @@ canvas { max-height: 320px; width: 100%; background: var(--bg-surface); border-r
     border-radius: 1.2rem;
     padding: 0.8rem 1.2rem;
 }
-.capex-year { font-weight: 700; min-width: 70px; color: var(--accent-green); }
+.capex-year { font-weight: 700; min-width: 70px; color: var(--accent-primary); }
 .capex-field { display: flex; align-items: center; gap: 0.5rem; }
 .capex-field label { font-size: 0.7rem; color: var(--text-secondary); }
 .capex-field input { width: 105px; background: var(--bg-surface); border: 1px solid var(--border-subtle); border-radius: 1rem; padding: 0.4rem 0.6rem; color: var(--text-primary); }
 .readonly-field {
     background: var(--readonly-bg);
-    color: var(--accent-green);
+    color: var(--accent-primary);
     font-weight: 500;
     min-width: 90px;
     text-align: center;
@@ -334,6 +354,7 @@ canvas { max-height: 320px; width: 100%; background: var(--bg-surface); border-r
     border-radius: 1rem;
     border: 1px solid var(--border-subtle);
 }
+
 .split-row { display: flex; flex-wrap: wrap; gap: 1.8rem; }
 .split-col { flex: 1; min-width: 280px; }
 
@@ -350,8 +371,8 @@ canvas { max-height: 320px; width: 100%; background: var(--bg-surface); border-r
     transition: all 0.2s;
 }
 .param-card:hover {
-    border-color: var(--accent-green);
-    box-shadow: 0 8px 20px rgba(0,0,0,0.05);
+    border-color: var(--accent-secondary);
+    box-shadow: 0 8px 20px rgba(32, 117, 222, 0.15);
 }
 .param-card .card-title {
     margin-bottom: 1rem;
@@ -369,12 +390,30 @@ canvas { max-height: 320px; width: 100%; background: var(--bg-surface); border-r
     gap: 1.8rem;
     margin-top: 1rem;
 }
+
+.analysis-grid-full {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.8rem;
+    margin-top: 1rem;
+}
+.analysis-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1.8rem;
+    margin-top: 1rem;
+}
+@media (max-width: 1000px) {
+    .analysis-grid { grid-template-columns: 1fr; }
+}
+
 .analysis-chart-container {
     background: var(--bg-card);
     border-radius: 1.5rem;
     padding: 1rem;
     border: 1px solid var(--border-subtle);
 }
+
 .effects-header {
     display: flex;
     flex-wrap: wrap;
@@ -410,7 +449,7 @@ canvas { max-height: 320px; width: 100%; background: var(--bg-surface); border-r
 .summary-item .value {
     font-weight: 800;
     font-size: 1.2rem;
-    color: var(--accent-green);
+    color: var(--accent-primary);
 }
 .summary-item.highlight .value {
     font-size: 1.6rem;
@@ -418,7 +457,7 @@ canvas { max-height: 320px; width: 100%; background: var(--bg-surface); border-r
 
 .actual-effect-panel {
     background: var(--bg-card);
-    border: 2px solid var(--accent-green);
+    border: 2px solid var(--accent-secondary);
     border-radius: 2rem;
     padding: 0.8rem 1.5rem;
     margin-bottom: 1.5rem;
@@ -444,9 +483,9 @@ canvas { max-height: 320px; width: 100%; background: var(--bg-surface); border-r
     color: var(--text-primary);
 }
 .actual-effect-panel input:focus {
-    border-color: var(--accent-green);
+    border-color: var(--accent-secondary);
     outline: none;
-    box-shadow: 0 0 0 3px rgba(31,123,77,0.15);
+    box-shadow: 0 0 0 3px rgba(32, 117, 222, 0.2);
 }
 
 @media (max-width: 1000px) {
@@ -468,4 +507,89 @@ footer {
     border-top: 1px solid var(--border-subtle);
     color: var(--text-secondary);
     background: var(--bg-surface);
+}
+
+/* Контейнер для всех блоков */
+.params-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2.5rem;
+}
+
+/* Каждый блок */
+.param-block {
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1.8rem;
+    padding: 1.5rem 1.8rem;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.02);
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.param-block:hover {
+    border-color: var(--accent-secondary);
+    box-shadow: 0 8px 20px rgba(32, 117, 222, 0.12);
+}
+
+/* Заголовок блока */
+.param-block-title {
+    font-weight: 600;
+    font-size: 1.1rem;
+    color: var(--accent-primary);
+    margin-bottom: 1.2rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid var(--accent-secondary);
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+
+/* Сетка карточек внутри блока */
+.param-block-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1rem;
+}
+
+/* Каждая карточка параметра (сохраняем прежний вид) */
+.param-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1.5rem;
+    padding: 1rem 1.2rem;
+    transition: border-color 0.2s, box-shadow 0.2s;
+}
+.param-card:hover {
+    border-color: var(--accent-secondary);
+    box-shadow: 0 8px 20px rgba(32, 117, 222, 0.12);
+}
+.param-card .card-title {
+    margin-bottom: 0.5rem;
+    font-size: 0.9rem;
+    border-left: none;
+    padding-left: 0;
+    color: var(--text-secondary);
+}
+.param-card .input-row {
+    margin-bottom: 0;
+}
+.param-card .input-row input {
+    width: 100%;
+    background: var(--bg-surface);
+    border: 1px solid var(--border-subtle);
+    border-radius: 1rem;
+    padding: 0.45rem 0.8rem;
+    font-family: monospace;
+    font-size: 0.85rem;
+    color: var(--text-primary);
+}
+.param-card .input-row input:focus {
+    border-color: var(--accent-secondary);
+    outline: none;
+    box-shadow: 0 0 0 3px rgba(32, 117, 222, 0.2);
+}
+
+@media (max-width: 700px) {
+    .param-block-grid {
+        grid-template-columns: 1fr;
+    }
 }
