@@ -392,7 +392,7 @@ function updateAnalysisCharts(cashflows, discFlows, discPayYear) {
                 if (idx !== -1) {
                     const payValue = cumVals[idx];
                     dataSets.push({
-                        label: 'Точка окупаемости',
+                        label: 'Точка окупаемости - год',
                         data: years.map((y, i) => i === idx ? payValue : null),
                         borderColor: '#00aa00',
                         backgroundColor: '#00aa00',
