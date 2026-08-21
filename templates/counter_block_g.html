@@ -7,7 +7,6 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 :root {
@@ -53,8 +52,7 @@ body { background:var(--bg-body); font-family:'Inter',sans-serif; padding:2rem 1
 .tab-btn[data-tab="tab_cashflow"]:hover { background:var(--highlight-bg); border-color:var(--accent-primary); }
 .tab-btn[data-tab="tab_cashflow"].active { background:var(--accent-primary); border-color:var(--accent-primary); color:var(--text-on-accent); }
 .tab-btn[data-tab="tab_cashflow"].active i { color:var(--text-on-accent); }
-.header-actions { margin-left:auto; display:flex; align-items:center; gap:0.5rem; }
-.theme-toggle { background:transparent; border:1px solid var(--border-subtle); border-radius:2rem; padding:0.5rem 0.9rem; font-size:1.2rem; color:var(--text-primary); cursor:pointer; transition:all 0.3s ease; line-height:1; }
+.theme-toggle { margin-left:auto; background:transparent; border:1px solid var(--border-subtle); border-radius:2rem; padding:0.5rem 0.9rem; font-size:1.2rem; color:var(--text-primary); cursor:pointer; transition:all 0.3s ease; line-height:1; }
 .theme-toggle:hover { background:var(--accent-primary); border-color:var(--accent-primary); color:var(--text-on-accent); }
 .tab-content { display:none; padding:2rem; background:var(--bg-surface); animation:fadeSlide 0.3s ease-out; }
 .tab-content.active { display:block; }
@@ -133,7 +131,7 @@ body.dark .actual-effect-panel input { background:#2a3a52; color:#e8f0fe; border
 .analysis-chart-container:hover { border-color:var(--accent-tertiary); box-shadow:var(--shadow-hover); }
 @media (max-width:1000px) { .form-grid { grid-template-columns:1fr; } .analysis-grid { grid-template-columns:1fr; } }
 @media (max-width:700px) { .param-block-grid { grid-template-columns:1fr; } }
-@media (max-width:800px) { .capex-row { flex-direction:column; align-items:flex-start; } .split-row { flex-direction:column; } .tabs { padding:0 0.8rem; } .tab-btn { padding:0.7rem 1rem; font-size:0.8rem; } .effects-header { justify-content:center; } .analysis-grid { grid-template-columns:1fr; } .header-actions { margin-left:0.5rem; } }
+@media (max-width:800px) { .capex-row { flex-direction:column; align-items:flex-start; } .split-row { flex-direction:column; } .tabs { padding:0 0.8rem; } .tab-btn { padding:0.7rem 1rem; font-size:0.8rem; } .effects-header { justify-content:center; } .analysis-grid { grid-template-columns:1fr; } }
 footer { font-size:0.7rem; text-align:center; padding:1rem; border-top:1px solid var(--border-subtle); color:var(--text-secondary); background:var(--bg-surface); }
 </style>
 </head>
@@ -147,11 +145,7 @@ footer { font-size:0.7rem; text-align:center; padding:1rem; border-top:1px solid
     <button class="tab-btn" data-tab="tab_proptax"><i class="bi bi-bank"></i> Налог на имущество</button>
     <button class="tab-btn" data-tab="tab_cashflow"><i class="bi bi-cash-stack"></i> Денежный поток</button>
     <button class="tab-btn" data-tab="tab_analysis"><i class="bi bi-bar-chart-steps"></i> Анализ</button>
-
-    <div class="header-actions">
-      <button class="theme-toggle" id="exportExcelBtn" title="Выгрузить расчеты и параметры в Excel"><i class="bi bi-file-earmark-excel"></i></button>
-      <button class="theme-toggle" id="themeToggle" title="Переключить тему"><i class="bi bi-moon-stars"></i></button>
-    </div>
+    <button class="theme-toggle" id="themeToggle"><i class="bi bi-moon-stars"></i></button>
   </div>
 
   <!-- Параметры -->
@@ -498,6 +492,7 @@ function updateSummary() {
 
 // ============================================================
 // 7. ГРАФИКИ АМОРТИЗАЦИИ И НАЛОГА
+// ВАЖНО: амортизация и налог на имущество начинаются со следующего года
 // ============================================================
 function getBalanceSchedules() {
   if (!capexYears.length) return { years: [], residualValues: [], deprValues: [] };
@@ -528,9 +523,11 @@ function getBalanceSchedules() {
   let prevEnd = 0;
 
   for (let y of years) {
+    // Стоимость на начало года формируется за счет вложений предыдущего года
     let incPrev = incInvMap.get(y - 1) || 0;
     let startVal = prevEnd + incPrev;
 
+    // Амортизация начинается со следующего года после постановки
     let depr = 0;
     for (let pYear of placementMap.keys()) {
       if (pYear < y && (y - pYear) <= usefulLife) {
@@ -690,8 +687,10 @@ function calculateCashFlows() {
     let active = (y >= benefitStart && !hasInvThisYear);
     let operIncome = active ? annualBenefit : 0;
 
+    // Балансовая стоимость на начало текущего года зависит от вложений предыдущего года
     let startVal = prevEnd + (incInvMap.get(y - 1) || 0);
 
+    // Амортизация начинается со следующего года после постановки
     let depr = 0;
     for (let pYear of placementMap.keys()) {
       if (pYear < y && (y - pYear) <= usefulLife) {
@@ -708,6 +707,7 @@ function calculateCashFlows() {
 
     let ocf = operIncome - propTax - incomeTax;
 
+    // Инвестиционный поток остается в текущем году
     let inv = -(incInvMap.get(y) || 0);
     let net = ocf + inv;
     cumulative += net;
@@ -741,29 +741,15 @@ function calculateCashFlows() {
   }
   let irrPercent = irr * 100;
 
-  // Дробная окупаемость, повторяем логику Excel
   let discPayYear = null;
-  let discountedPayback = null;
-
+  let cumD = 0;
   for (let i = 0; i < discFlows.length; i++) {
-    if (discFlows[i].discCumulative >= 0) {
-      discPayYear = discFlows[i].year;
-      const flow = discFlows[i].discNet;
-      const cum = discFlows[i].discCumulative;
-      discountedPayback = (discPayYear - projectStart) + (flow > 0 ? cum / flow : 0);
-      break;
-    }
+    cumD += discFlows[i].discNet;
+    if (cumD >= 0 && discPayYear === null) discPayYear = discFlows[i].year;
   }
+  let payback = discPayYear ? (discPayYear - projectStart) : null;
 
-  return {
-    cashflows,
-    npv,
-    irr: irrPercent.toFixed(2),
-    discountedPayback,
-    benefitAnnual: annualBenefit,
-    discFlows,
-    discPayYear
-  };
+  return { cashflows, npv, irr: irrPercent.toFixed(2), discountedPayback: payback, benefitAnnual: annualBenefit, discFlows, discPayYear };
 }
 
 // ============================================================
@@ -778,12 +764,10 @@ function displayResults() {
       tbody.innerHTML += `<tr><td>${cf.year}</td><td>${formatNumberWithSpaces(cf.ocf, 2)}</td><td>${formatNumberWithSpaces(cf.icf, 2)}</td><td>${formatNumberWithSpaces(cf.net, 2)}</td><td>${formatNumberWithSpaces(cf.cum, 2)}</td><td>${formatNumberWithSpaces(cf.disc, 2)}</td></tr>`;
     });
   }
-
-  const payStr = discountedPayback !== null ? discountedPayback.toFixed(2) + " лет" : "> горизонта";
+  const payStr = discountedPayback !== null ? discountedPayback.toFixed(1) + " лет" : "> горизонта";
   const actualYear = +document.getElementById('actual_effect_year').value;
   const found = cashflows.find(cf => cf.year === actualYear);
   const actualEffect = found ? formatNumberWithSpaces(found.cum, 2) + " млн ₽" : "—";
-
   const metricsPanel = document.getElementById('metricsPanel');
   if (metricsPanel) {
     metricsPanel.innerHTML = `
@@ -932,231 +916,7 @@ function updateAnalysisCharts(cashflows, discFlows, discPayYear) {
 }
 
 // ============================================================
-// 11. ЭКСПОРТ В EXCEL
-// ============================================================
-function exportToExcel() {
-  if (typeof XLSX === 'undefined') {
-    alert('Библиотека для выгрузки в Excel не загрузилась. Проверьте доступ к интернету.');
-    return;
-  }
-
-  const num = (value, decimals = 6) => {
-    const n = Number(value);
-    if (!isFinite(n)) return 0;
-    return Number(n.toFixed(decimals));
-  };
-
-  const getNum = (id) => +document.getElementById(id)?.value || 0;
-  const getText = (id) => document.getElementById(id)?.value || '';
-
-  const wb = XLSX.utils.book_new();
-
-  // Параметры
-  const projectStart = capexYears.length ? capexYears[0].year : 2026;
-  const benefitStart = getBenefitStart();
-
-  const paramsAOA = [
-    ['Показатель', 'Значение'],
-    ['Наименование проекта', getText('project_name')],
-    ['Оборудование "с проектом"', getText('equipment_with')],
-    ['Оборудование "без проекта"', getText('equipment_without')],
-    ['Год приведения денежных потоков', getNum('base_year')],
-    ['Год начала проекта', projectStart],
-    ['Год старта эффектов', benefitStart],
-    ['Год для планируемого эффекта', getNum('actual_effect_year')],
-    ['Расчетный период, лет', getNum('calc_period')],
-    ['Срок полезного использования, лет', getNum('useful_life')],
-    ['Норма дисконта, %', getNum('discount_rate')],
-    ['Налог на прибыль, %', getNum('profit_tax_rate')],
-    ['Налог на имущество, %', getNum('prop_tax_rate')]
-  ];
-  const wsParams = XLSX.utils.aoa_to_sheet(paramsAOA);
-  wsParams['!cols'] = [{ wch: 45 }, { wch: 35 }];
-  XLSX.utils.book_append_sheet(wb, wsParams, 'Параметры');
-
-  // Эффекты
-  const eff = computeEffects();
-  const totalAnnualRub = eff.obs + eff.topo + eff.tech + eff.com + eff.supply + eff.acc + eff.nvos + eff.royalty + eff.opexChange;
-
-  const effectsAOA = [
-    ['Раздел', 'Показатель', 'Значение', 'Ед. изм.'],
-    ['1.1 Наблюдаемость', 'Сокращение времени на локализацию', getNum('obs_time'), 'ч/год'],
-    ['1.1 Наблюдаемость', 'Стоимость топлива', getNum('fuel_cost'), 'руб./л'],
-    ['1.1 Наблюдаемость', 'Средняя скорость', getNum('speed_kmh'), 'км/ч'],
-    ['1.1 Наблюдаемость', 'Средний расход топлива', getNum('fuel_consumption'), 'л/км'],
-    ['1.1 Наблюдаемость', 'Эффект', num(eff.obs, 2), 'руб.'],
-    ['1.2 Топология сети', 'Удельные затраты на ТОиР', getNum('topo_cost_per_km'), 'руб./км'],
-    ['1.2 Топология сети', 'Сокращение протяженности', getNum('topo_km_reduce'), 'км'],
-    ['1.2 Топология сети', 'Эффект', num(eff.topo, 2), 'руб.'],
-    ['1.3 Технологические потери', 'Потери "без проекта"', getNum('tech_loss_before'), 'кВт*ч'],
-    ['1.3 Технологические потери', 'Потери "с проектом"', getNum('tech_loss_after'), 'кВт*ч'],
-    ['1.3 Технологические потери', 'Ставка', getNum('tech_rate'), 'руб./кВт*ч'],
-    ['1.3 Технологические потери', 'Эффект', num(eff.tech, 2), 'руб.'],
-    ['1.4 Коммерческие потери', 'Потери "без проекта"', getNum('com_loss_before'), 'кВт*ч'],
-    ['1.4 Коммерческие потери', 'Потери "с проектом"', getNum('com_loss_after'), 'кВт*ч'],
-    ['1.4 Коммерческие потери', 'Ставка', getNum('com_rate'), 'руб./кВт*ч'],
-    ['1.4 Коммерческие потери', 'Эффект', num(eff.com, 2), 'руб.'],
-    ['1.5 Увеличение отпуска', 'Отпуск "без проекта"', getNum('supply_before'), 'кВт*ч'],
-    ['1.5 Увеличение отпуска', 'Отпуск "с проектом"', getNum('supply_after'), 'кВт*ч'],
-    ['1.5 Увеличение отпуска', 'Тариф', getNum('tariff_supply'), 'руб./кВт*ч'],
-    ['1.5 Увеличение отпуска', 'Эффект', num(eff.supply, 2), 'руб.'],
-    ['1.6 Промбезопасность', 'Аварии "без проекта"', getNum('acc_before'), 'шт.'],
-    ['1.6 Промбезопасность', 'Аварии "с проектом"', getNum('acc_after'), 'шт.'],
-    ['1.6 Промбезопасность', 'Затраты на ликвидацию одной аварии', getNum('acc_cost'), 'руб.'],
-    ['1.6 Промбезопасность', 'Эффект', num(eff.acc, 2), 'руб.'],
-    ['1.7 НВОС', 'Платежи "без проекта"', getNum('nvos_before'), 'руб.'],
-    ['1.7 НВОС', 'Платежи "с проектом"', getNum('nvos_after'), 'руб.'],
-    ['1.7 НВОС', 'Эффект', num(eff.nvos, 2), 'руб.'],
-    ['1.8 Роялти', 'База для расчета', getNum('royalty_base'), 'руб.'],
-    ['1.8 Роялти', 'Ставка роялти', getNum('royalty_rate'), '%'],
-    ['1.8 Роялти', 'Эффект', num(eff.royalty, 2), 'руб.'],
-    ['2 Эксплуатационные затраты', 'Затраты "без проекта"', getNum('opex_before'), 'руб.'],
-    ['2 Эксплуатационные затраты', 'Затраты "с проектом"', getNum('opex_after'), 'руб.'],
-    ['2 Эксплуатационные затраты', 'Изменение затрат', num(eff.opexChange, 2), 'руб.'],
-    ['ИТОГО', 'Годовой эффект всего', num(totalAnnualRub, 2), 'руб.'],
-    ['ИТОГО', 'Годовой эффект всего', num(totalAnnualRub / 1e6, 6), 'млн руб.']
-  ];
-  const wsEffects = XLSX.utils.aoa_to_sheet(effectsAOA);
-  wsEffects['!cols'] = [{ wch: 30 }, { wch: 50 }, { wch: 20 }, { wch: 15 }];
-  XLSX.utils.book_append_sheet(wb, wsEffects, 'Эффекты');
-
-  // КАПЕX
-  const capexAOA = [
-    ['Год', 'КВ "без проекта"', 'КВ "с проектом"', 'НИОКР', 'КВ+НИОКР', 'Изменение КВ', 'Постановка на баланс']
-  ];
-
-  let sumWithout = 0;
-  let sumWith = 0;
-  let sumRnd = 0;
-  let sumInc = 0;
-  let sumPlacement = 0;
-
-  capexYears.forEach(c => {
-    const totalWith = c.capex_with + c.rnd;
-    const inc = totalWith - c.capex_without;
-    const placement = totalWith > 0 ? inc : 0;
-
-    sumWithout += c.capex_without;
-    sumWith += c.capex_with;
-    sumRnd += c.rnd;
-    sumInc += inc;
-    sumPlacement += placement;
-
-    capexAOA.push([
-      c.year,
-      num(c.capex_without),
-      num(c.capex_with),
-      num(c.rnd),
-      num(totalWith),
-      num(inc),
-      num(placement)
-    ]);
-  });
-
-  capexAOA.push([
-    'Итого',
-    num(sumWithout),
-    num(sumWith),
-    num(sumRnd),
-    num(sumWith + sumRnd),
-    num(sumInc),
-    num(sumPlacement)
-  ]);
-
-  const wsCapex = XLSX.utils.aoa_to_sheet(capexAOA);
-  wsCapex['!cols'] = [
-    { wch: 10 }, { wch: 18 }, { wch: 18 }, { wch: 12 },
-    { wch: 15 }, { wch: 18 }, { wch: 24 }
-  ];
-  XLSX.utils.book_append_sheet(wb, wsCapex, 'КВ');
-
-  // Амортизация
-  const balance = getBalanceSchedules();
-  const amortAOA = [
-    ['Год', 'Стоимость ОС на начало года', 'Амортизация', 'Стоимость ОС на конец года']
-  ];
-
-  balance.years.forEach((year, i) => {
-    const start = balance.residualValues[i];
-    const depr = balance.deprValues[i];
-    const end = start - depr;
-    amortAOA.push([year, num(start), num(depr), num(end)]);
-  });
-
-  const wsAmort = XLSX.utils.aoa_to_sheet(amortAOA);
-  wsAmort['!cols'] = [{ wch: 10 }, { wch: 28 }, { wch: 18 }, { wch: 28 }];
-  XLSX.utils.book_append_sheet(wb, wsAmort, 'Амортизация');
-
-  // Налог на имущество
-  const propRate = getNum('prop_tax_rate') / 100;
-  const propAOA = [
-    ['Год', 'Стоимость ОС на начало', 'Стоимость ОС на конец', 'Среднегодовая стоимость', 'Ставка, %', 'Налог']
-  ];
-
-  balance.years.forEach((year, i) => {
-    const start = balance.residualValues[i];
-    const depr = balance.deprValues[i];
-    const end = start - depr;
-    const avg = (start + end) / 2;
-    const tax = avg * propRate;
-
-    propAOA.push([
-      year,
-      num(start),
-      num(end),
-      num(avg),
-      num(getNum('prop_tax_rate'), 2),
-      num(tax)
-    ]);
-  });
-
-  const wsProp = XLSX.utils.aoa_to_sheet(propAOA);
-  wsProp['!cols'] = [
-    { wch: 10 }, { wch: 24 }, { wch: 24 }, { wch: 26 }, { wch: 12 }, { wch: 16 }
-  ];
-  XLSX.utils.book_append_sheet(wb, wsProp, 'Налог на имущество');
-
-  // Денежный поток
-  const cf = calculateCashFlows();
-  const actualYear = getNum('actual_effect_year');
-  const foundActual = cf.cashflows.find(row => row.year === actualYear);
-
-  const cashAOA = [
-    ['Показатель', 'Значение'],
-    ['NPV (ЧДД), млн руб', num(cf.npv)],
-    ['IRR (ВНД), %', num(cf.irr, 2)],
-    ['Срок окупаемости с учетом дисконтирования, лет', cf.discountedPayback !== null ? num(cf.discountedPayback, 2) : '> горизонта'],
-    ['Годовой эффект, млн руб', num(cf.benefitAnnual)],
-    ['Год для фактического эффекта', actualYear],
-    ['Фактический эффект (накопленный недисконтированный), млн руб', foundActual ? num(foundActual.cum) : '—'],
-    [],
-    ['Год', 'Операционный поток', 'Инвестиционный поток', 'Суммарный поток', 'Накопленный поток', 'Дисконтированный накопленный']
-  ];
-
-  cf.cashflows.forEach(row => {
-    cashAOA.push([
-      row.year,
-      num(row.ocf),
-      num(row.icf),
-      num(row.net),
-      num(row.cum),
-      num(row.disc)
-    ]);
-  });
-
-  const wsCash = XLSX.utils.aoa_to_sheet(cashAOA);
-  wsCash['!cols'] = [
-    { wch: 12 }, { wch: 24 }, { wch: 24 }, { wch: 20 }, { wch: 22 }, { wch: 30 }
-  ];
-  XLSX.utils.book_append_sheet(wb, wsCash, 'Денежный поток');
-
-  const safeProjectName = (getText('project_name') || 'calculator').replace(/[\\/:*?"<>|]/g, '_');
-  const timestamp = new Date().toISOString().slice(0, 19).replace('T', '_').replace(/:/g, '-');
-  XLSX.writeFile(wb, `${safeProjectName}_${timestamp}.xlsx`);
-}
-
-// ============================================================
-// 12. FULL REFRESH
+// 11. FULL REFRESH
 // ============================================================
 function fullRefresh() {
   updateCapexTotals();
@@ -1172,13 +932,15 @@ function fullRefresh() {
 }
 
 // ============================================================
-// 13. ИНИЦИАЛИЗАЦИЯ
+// 12. ИНИЦИАЛИЗАЦИЯ
 // ============================================================
 document.addEventListener('DOMContentLoaded', function() {
+  // Сначала инициализируем данные, чтобы расчеты не вызывались на пустых массивах
   initCapexYears();
   computeEffects();
   updateSummary();
 
+  // Тема
   const themeBtn = document.getElementById('themeToggle');
   function applyTheme(theme) {
     if (theme === 'dark') {
@@ -1200,8 +962,7 @@ document.addEventListener('DOMContentLoaded', function() {
     fullRefresh();
   });
 
-  document.getElementById('exportExcelBtn')?.addEventListener('click', exportToExcel);
-
+  // Вкладки
   const allTabs = document.querySelectorAll('.tab-btn[data-tab]');
   const contents = document.querySelectorAll('.tab-content');
 
@@ -1223,10 +984,12 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
+  // Активная вкладка по умолчанию
   document.querySelector('.tab-btn[data-tab="tab_params"]')?.classList.add('active');
   document.getElementById('tab_params')?.classList.add('active');
   contents.forEach(c => { if (c.id !== 'tab_params') c.classList.remove('active'); });
 
+  // События изменения параметров
   const paramIds = ['base_year', 'calc_period', 'useful_life', 'discount_rate', 'profit_tax_rate', 'prop_tax_rate'];
   paramIds.forEach(id => {
     document.getElementById(id)?.addEventListener('change', () => {
