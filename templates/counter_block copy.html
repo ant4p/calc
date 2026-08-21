@@ -929,9 +929,8 @@ function updateAnalysisCharts(cashflows, discFlows, discPayYear) {
     return new Chart(ctx, cfg);
   }
 
-  // Накопленный дисконтированный поток + зелёная точка окупаемости
   if (cumChart) cumChart.destroy();
-  
+
   let cumDatasets = [{
     label: 'Накопленный дисконтированный поток',
     data: cumVals,
@@ -940,7 +939,7 @@ function updateAnalysisCharts(cashflows, discFlows, discPayYear) {
     fill: true,
     tension: .2
   }];
-  
+
   if (discPayYear) {
     const idx = years.indexOf(discPayYear);
     if (idx !== -1) {
@@ -957,7 +956,7 @@ function updateAnalysisCharts(cashflows, discFlows, discPayYear) {
       });
     }
   }
-  
+
   cumChart = makeChart('cumDiscountedChart', {
     type: 'line',
     data: {
@@ -1026,9 +1025,12 @@ function exportToExcel() {
 
     const wb = XLSX.utils.book_new();
 
+    // Лист "Параметры" — со всеми полями, включая оборудование "с" и "без"
     const params = [
       ['Показатель', 'Значение'],
       ['Наименование проекта', getText('project_name')],
+      ['Оборудование "с проектом"', getText('equipment_with')],
+      ['Оборудование "без проекта"', getText('equipment_without')],
       ['Год приведения денежных потоков', getVal('base_year', 2026)],
       ['Год начала проекта', getProjectStart()],
       ['Год старта эффектов', getBenefitStart()],
@@ -1040,7 +1042,7 @@ function exportToExcel() {
     ];
 
     const wsParams = XLSX.utils.aoa_to_sheet(params);
-    wsParams['!cols'] = [{ wch: 45 }, { wch: 30 }];
+    wsParams['!cols'] = [{ wch: 45 }, { wch: 40 }];
     XLSX.utils.book_append_sheet(wb, wsParams, 'Параметры');
 
     const effects = computeEffects();
@@ -1091,7 +1093,12 @@ function exportToExcel() {
     wsCash['!cols'] = [{ wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 20 }, { wch: 25 }];
     XLSX.utils.book_append_sheet(wb, wsCash, 'Денежный поток');
 
-    XLSX.writeFile(wb, `Инновационный_проект_${new Date().toISOString().slice(0, 10)}.xlsx`);
+    // Имя файла: Наименование (если есть) + дата
+    const rawName = getText('project_name').trim();
+    const safeName = (rawName || 'Инновационный проект').replace(/[\\/:*?"<>|]/g, '_');
+    const dateStr = new Date().toISOString().slice(0, 10);
+
+    XLSX.writeFile(wb, `${safeName}_${dateStr}.xlsx`);
   } catch (e) {
     console.error(e);
     alert('Ошибка при выгрузке в Excel');
