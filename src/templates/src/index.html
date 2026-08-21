@@ -118,7 +118,7 @@ footer{font-size:.7rem;text-align:center;padding:1rem;border-top:1px solid var(-
 
     <div class="header-actions">
       <button class="theme-toggle" id="resetBtn" title="Обнулить все вводимые поля"><i class="bi bi-eraser-fill"></i></button>
-      <button class="theme-toggle" id="exportExcelBtn" title="Выгрузить в Excel"><i class="bi bi-file-earmark-excel"></i></button>
+      <button class="theme-toggle" id="exportExcelBtn" title="Выгрузить в Excel"><i class="bi bi-download"></i></button>
       <button class="theme-toggle" id="themeToggle" title="Переключить тему"><i class="bi bi-moon-stars"></i></button>
     </div>
   </div>
@@ -793,6 +793,8 @@ function calculateCashFlows() {
   let discCum = 0;
   let prevEnd = 0;
 
+  const discountBase = 1 + discount;
+
   for (let y of allYears) {
     let hasInvThisYear = (invWithMap.get(y) || 0) > 0;
     let active = (y >= benefitStart && !hasInvThisYear);
@@ -821,7 +823,8 @@ function calculateCashFlows() {
     cumulative += net;
 
     let t = y - baseYear;
-    let df = Math.pow(1 + discount, -t);
+    let df = discountBase > 0 ? Math.pow(discountBase, -t) : 1;
+
     let discNet = net * df;
     discCum += discNet;
 
@@ -928,19 +931,40 @@ function updateAnalysisCharts(cashflows, discFlows, discPayYear) {
     return new Chart(ctx, cfg);
   }
 
+  // Накопленный дисконтированный поток + зелёная точка окупаемости
   if (cumChart) cumChart.destroy();
+  
+  let cumDatasets = [{
+    label: 'Накопленный дисконтированный поток',
+    data: cumVals,
+    borderColor: clr.secondary,
+    backgroundColor: clr.bgFill,
+    fill: true,
+    tension: .2
+  }];
+  
+  if (discPayYear) {
+    const idx = years.indexOf(discPayYear);
+    if (idx !== -1) {
+      cumDatasets.push({
+        label: 'Точка окупаемости',
+        data: years.map((y, i) => i === idx ? cumVals[idx] : null),
+        borderColor: '#00aa00',
+        backgroundColor: '#00aa00',
+        pointRadius: 10,
+        pointHoverRadius: 14,
+        showLine: false,
+        pointStyle: 'circle',
+        borderWidth: 2
+      });
+    }
+  }
+  
   cumChart = makeChart('cumDiscountedChart', {
     type: 'line',
     data: {
       labels: years,
-      datasets: [{
-        label: 'Накопленный дисконтированный поток',
-        data: cumVals,
-        borderColor: clr.secondary,
-        backgroundColor: clr.bgFill,
-        fill: true,
-        tension: .2
-      }]
+      datasets: cumDatasets
     },
     options: {
       responsive: true,
@@ -1007,6 +1031,7 @@ function exportToExcel() {
     const params = [
       ['Показатель', 'Значение'],
       ['Наименование проекта', getText('project_name')],
+      ['Год приведения денежных потоков', getVal('base_year', 2026)],
       ['Год начала проекта', getProjectStart()],
       ['Год старта эффектов', getBenefitStart()],
       ['Расчетный период, лет', getVal('calc_period', 25)],
