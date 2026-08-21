@@ -1,0 +1,789 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Инновационный калькулятор эффективности</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+:root {
+  --bg-body: #e8f0fe; --bg-surface: #ffffff; --bg-card: #ffffff; --border-subtle: #d0dce8;
+  --text-primary: #0a1a3a; --text-secondary: #2a4a7a; --text-on-accent: #ffffff; --text-secondary-on-accent: #c8d8ff;
+  --accent-primary: #1a4a8a; --accent-secondary: #2a6aba; --accent-tertiary: #4a8af4; --accent-light: #7ab0ff;
+  --highlight-bg: #e0ecff; --readonly-bg: #f0f6ff;
+  --metric-bg: linear-gradient(135deg, #1a4a8a, #2a6aba);
+  --btn-gradient-start: #2a6aba; --btn-gradient-end: #4a8af4;
+  --btn-danger-start: #778f87; --btn-danger-end: #5b6f66;
+  --table-header-bg: #e8f0fe; --metric-border: #2a6aba;
+  --chart-grid: #d0dce8; --chart-text: #1a4a8a; --chart-secondary-text: #2a4a7a;
+  --shadow-light: 0 8px 30px rgba(26,74,138,0.10);
+  --shadow-hover: 0 12px 35px rgba(26,74,138,0.18);
+  --shadow-button: 0 4px 20px rgba(42,106,186,0.3);
+  --shadow-button-hover: 0 8px 30px rgba(42,106,186,0.5);
+}
+body.dark {
+  --bg-body: #0a1220; --bg-surface: #151e2e; --bg-card: #1a263a; --border-subtle: #2a3a52;
+  --text-primary: #e8f0fe; --text-secondary: #a0b8d8; --text-on-accent: #ffffff; --text-secondary-on-accent: #c0d0ff;
+  --accent-primary: #3a7acc; --accent-secondary: #5a9af4; --accent-tertiary: #7abaff; --accent-light: #a0d0ff;
+  --highlight-bg: #1a2a4a; --readonly-bg: #1a263a;
+  --metric-bg: linear-gradient(135deg, #1a2a4a, #2a4a7a);
+  --btn-gradient-start: #3a7acc; --btn-gradient-end: #5a9af4;
+  --btn-danger-start: #a56b6b; --btn-danger-end: #7a4d4d;
+  --table-header-bg: #1a263a; --metric-border: #3a7acc;
+  --chart-grid: #2a3a52; --chart-text: #a0b8d8; --chart-secondary-text: #80a0c0;
+  --shadow-light: 0 8px 30px rgba(0,0,0,0.3);
+  --shadow-hover: 0 12px 35px rgba(42,106,186,0.2);
+  --shadow-button: 0 4px 20px rgba(42,106,186,0.4);
+  --shadow-button-hover: 0 8px 30px rgba(42,106,186,0.6);
+}
+body { background:var(--bg-body); font-family:'Inter',sans-serif; padding:2rem 1.5rem; color:var(--text-primary); transition:background 0.3s,color 0.3s; min-height:100vh; }
+.app-container { max-width:1600px; margin:0 auto; background:var(--bg-surface); border-radius:2rem; box-shadow:0 20px 40px -12px rgba(0,0,0,0.15); overflow:hidden; border:1px solid var(--border-subtle); }
+.tabs { display:flex; flex-wrap:wrap; align-items:center; background:var(--bg-surface); border-bottom:1px solid var(--border-subtle); padding:0 1.5rem; gap:0.25rem; }
+.tab-btn { background:transparent; border:none; padding:0.9rem 1.4rem; font-size:0.9rem; font-weight:500; color:var(--text-secondary); cursor:pointer; border-bottom:2px solid transparent; margin-bottom:-1px; display:inline-flex; align-items:center; gap:0.6rem; transition:all 0.3s ease; }
+.tab-btn i { font-size:1.1rem; }
+.tab-btn.active { color:var(--text-on-accent); background:var(--accent-primary); border-radius:1rem 1rem 0 0; border-bottom-color:transparent; }
+.tab-btn.active i { color:var(--text-on-accent); }
+.tab-btn:hover:not(.active):not([data-tab="tab_cashflow"]) { background:var(--highlight-bg); color:var(--accent-primary); border-radius:1rem 1rem 0 0; }
+.tab-btn:hover:not(.active) i { color:var(--accent-primary); }
+.tab-btn[data-tab="tab_cashflow"] { border:1px solid var(--accent-secondary); border-radius:2rem; background:rgba(42,106,186,0.08); margin:0.3rem 0.2rem; padding:0.6rem 1.2rem; }
+.tab-btn[data-tab="tab_cashflow"]:hover { background:var(--highlight-bg); border-color:var(--accent-primary); }
+.tab-btn[data-tab="tab_cashflow"].active { background:var(--accent-primary); border-color:var(--accent-primary); color:var(--text-on-accent); }
+.tab-btn[data-tab="tab_cashflow"].active i { color:var(--text-on-accent); }
+.header-actions { margin-left:auto; display:flex; align-items:center; gap:0.5rem; }
+.theme-toggle { background:transparent; border:1px solid var(--border-subtle); border-radius:2rem; padding:0.5rem 0.9rem; font-size:1.2rem; color:var(--text-primary); cursor:pointer; transition:all 0.3s ease; line-height:1; }
+.theme-toggle:hover { background:var(--accent-primary); border-color:var(--accent-primary); color:var(--text-on-accent); }
+.tab-content { display:none; padding:2rem; background:var(--bg-surface); animation:fadeSlide 0.3s ease-out; }
+.tab-content.active { display:block; }
+@keyframes fadeSlide { from { opacity:0; transform:translateY(10px); } to { opacity:1; transform:translateY(0); } }
+.form-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(350px,1fr)); gap:1.5rem; margin-bottom:2rem; }
+.card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:1.5rem; padding:1.2rem 1.3rem; box-shadow:var(--shadow-light); transition:all 0.25s ease; }
+.card:hover { border-color:var(--accent-tertiary); box-shadow:var(--shadow-hover); transform:translateY(-3px); }
+.card-title { font-weight:600; font-size:1rem; margin-bottom:1.2rem; color:var(--accent-primary); display:flex; align-items:center; gap:0.6rem; border-left:3px solid var(--accent-tertiary); padding-left:0.85rem; }
+.card-title i { color:var(--accent-tertiary); font-size:1.1rem; }
+.input-row { display:flex; flex-wrap:wrap; justify-content:space-between; align-items:center; margin-bottom:0.9rem; gap:0.6rem; }
+.input-row label { font-size:0.85rem; font-weight:500; color:var(--text-secondary); flex:1; }
+.input-row input, .input-row select { background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:1rem; padding:0.5rem 0.9rem; width:170px; font-family:monospace; font-size:0.85rem; color:var(--text-primary); box-shadow:inset 0 1px 3px rgba(0,0,0,0.03); transition:border-color 0.2s,box-shadow 0.2s; }
+body.dark .input-row input, body.dark .input-row select { background:#2a3a52; color:#e8f0fe; border-color:#3a5a7a; }
+.input-row input:focus, .input-row select:focus { border-color:var(--accent-tertiary); outline:none; box-shadow:0 0 0 4px rgba(74,138,244,0.2),inset 0 1px 3px rgba(0,0,0,0.03); }
+.input-row input[readonly] { background:var(--readonly-bg); font-weight:500; color:var(--accent-primary); border-color:var(--accent-tertiary); }
+body.dark .input-row input[readonly] { background:#1a263a; color:#a0b8d8; }
+.table-wrapper { overflow-x:auto; margin-top:1rem; border-radius:1.25rem; border:1px solid var(--border-subtle); background:var(--bg-card); }
+table { width:100%; border-collapse:collapse; font-size:0.8rem; }
+th { background:var(--table-header-bg); padding:0.85rem 0.6rem; font-weight:600; color:var(--accent-primary); border-bottom:1px solid var(--border-subtle); }
+td { padding:0.65rem 0.45rem; text-align:center; border-bottom:1px solid var(--border-subtle); color:var(--text-primary); }
+body.dark td { color:#c0d0e8; }
+tr:hover td { background:var(--highlight-bg); }
+td:first-child { font-weight:700; color:var(--accent-primary); background:transparent; border-right:1px solid var(--border-subtle); min-width:80px; white-space:nowrap; }
+body.dark td:first-child { color:var(--accent-secondary); border-right-color:var(--border-subtle); }
+.metrics { display:flex; flex-wrap:wrap; gap:1.2rem; margin-bottom:2rem; background:var(--metric-bg); border-radius:2rem; padding:1.2rem 1.8rem; border:1px solid var(--metric-border); justify-content:center; color:var(--text-on-accent); box-shadow:var(--shadow-light); }
+.metric-card { background:rgba(255,255,255,0.08); backdrop-filter:blur(4px); border-radius:1.5rem; padding:0.8rem 1.4rem; flex:1; min-width:160px; text-align:center; border:1px solid rgba(255,255,255,0.15); transition:all 0.25s ease; }
+.metric-card:hover { background:rgba(255,255,255,0.15); border-color:rgba(255,255,255,0.3); transform:translateY(-2px); }
+.metric-label { font-size:0.7rem; text-transform:uppercase; font-weight:600; color:var(--text-secondary-on-accent); display:flex; align-items:center; justify-content:center; gap:0.3rem; margin-bottom:0.3rem; }
+.metric-value { font-weight:500; font-size:1.8rem; color:var(--text-on-accent); }
+.metric-card.highlight { background:rgba(255,255,255,0.15); border:2px solid rgba(255,255,255,0.3); box-shadow:0 4px 20px rgba(0,0,0,0.1); }
+.metric-card.highlight .metric-value { color:var(--text-on-accent); font-size:2rem; }
+button.calc-btn { background:linear-gradient(135deg, var(--btn-gradient-start), var(--btn-gradient-end)); color:white; border:none; padding:0.6rem 1.6rem; border-radius:2rem; font-weight:600; cursor:pointer; display:inline-flex; align-items:center; gap:0.6rem; transition:all 0.3s ease; box-shadow:var(--shadow-button); }
+button.calc-btn:hover { background:linear-gradient(135deg, var(--btn-gradient-end), var(--btn-gradient-start)); transform:translateY(-3px); box-shadow:var(--shadow-button-hover); }
+button.calc-btn:active { transform:translateY(0px); }
+hr { margin:1rem 0; border-color:var(--border-subtle); }
+canvas { max-height:320px; width:100%; background:var(--bg-surface); border-radius:1rem; padding:0.25rem; }
+.capex-grid { display:flex; flex-direction:column; gap:0.8rem; }
+.capex-row { display:flex; flex-wrap:wrap; align-items:center; gap:0.8rem; background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:1.2rem; padding:0.8rem 1.2rem; transition:border-color 0.2s,box-shadow 0.2s; }
+.capex-row:hover { border-color:var(--accent-tertiary); box-shadow:var(--shadow-light); }
+.capex-year { font-weight:700; min-width:70px; color:var(--accent-primary); }
+.capex-field { display:flex; align-items:center; gap:0.5rem; }
+.capex-field label { font-size:0.7rem; color:var(--text-secondary); }
+.capex-field input { width:105px; background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:1rem; padding:0.4rem 0.6rem; color:var(--text-primary); transition:border-color 0.2s,box-shadow 0.2s; }
+body.dark .capex-field input { background:#2a3a52; color:#e8f0fe; border-color:#3a5a7a; }
+.capex-field input:focus { border-color:var(--accent-tertiary); outline:none; box-shadow:0 0 0 3px rgba(74,138,244,0.2); }
+.readonly-field { background:var(--readonly-bg); color:var(--accent-primary); font-weight:500; min-width:90px; text-align:center; padding:0.4rem 0.5rem; border-radius:1rem; border:1px solid var(--border-subtle); }
+body.dark .readonly-field { background:#1a263a; color:#a0b8d8; }
+.split-row { display:flex; flex-wrap:wrap; gap:1.8rem; }
+.split-col { flex:1; min-width:280px; }
+.params-container { display:flex; flex-direction:column; gap:2.5rem; }
+.param-block { background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:1.8rem; padding:1.5rem 1.8rem; box-shadow:var(--shadow-light); transition:border-color 0.2s,box-shadow 0.2s; }
+.param-block:hover { border-color:var(--accent-secondary); box-shadow:var(--shadow-hover); }
+.param-block-title { font-weight:600; font-size:1.1rem; color:var(--accent-primary); margin-bottom:1.2rem; padding-bottom:0.5rem; border-bottom:2px solid var(--accent-secondary); display:flex; align-items:center; gap:0.6rem; }
+.param-block-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:1rem; }
+.param-card { background:var(--bg-card); border:1px solid var(--border-subtle); border-radius:1.5rem; padding:1rem 1.2rem; transition:border-color 0.2s,box-shadow 0.2s; }
+.param-card:hover { border-color:var(--accent-secondary); box-shadow:var(--shadow-light); }
+.param-card .card-title { margin-bottom:0.5rem; font-size:0.9rem; border-left:none; padding-left:0; color:var(--text-secondary); }
+.param-card .input-row { margin-bottom:0; }
+.param-card .input-row input { width:100%; background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:1rem; padding:0.45rem 0.8rem; font-family:monospace; font-size:0.85rem; color:var(--text-primary); }
+body.dark .param-card .input-row input { background:#2a3a52; color:#e8f0fe; border-color:#3a5a7a; }
+.param-card .input-row input:focus { border-color:var(--accent-secondary); outline:none; box-shadow:0 0 0 3px rgba(42,106,186,0.2); }
+.effects-header { display:flex; flex-wrap:wrap; align-items:center; justify-content:flex-end; gap:1.5rem; margin-bottom:2rem; background:var(--metric-bg); border-radius:1.8rem; padding:1rem 1.5rem; border:1px solid var(--metric-border); color:var(--text-on-accent); box-shadow:var(--shadow-light); }
+.summary-module { background:rgba(255,255,255,0.08); backdrop-filter:blur(4px); border-radius:1.5rem; padding:0.5rem 1.2rem; border:1px solid rgba(255,255,255,0.15); display:inline-flex; align-items:baseline; gap:1.5rem; flex-wrap:wrap; }
+.summary-item { display:flex; align-items:baseline; gap:0.5rem; font-size:0.9rem; }
+.summary-item .label { font-weight:500; color:var(--text-secondary-on-accent); }
+.summary-item .value { font-weight:500; font-size:1.6rem; color:var(--text-on-accent); }
+.summary-item.highlight .value { font-size:1.9rem; }
+.actual-effect-panel { background:var(--bg-card); border:2px solid var(--accent-secondary); border-radius:2rem; padding:0.8rem 1.5rem; margin-bottom:1.5rem; display:inline-flex; align-items:center; gap:1rem; flex-wrap:wrap; box-shadow:var(--shadow-light); }
+.actual-effect-panel label { font-weight:700; font-size:1rem; color:var(--text-primary); display:flex; align-items:center; gap:0.5rem; }
+.actual-effect-panel input { background:var(--bg-surface); border:1px solid var(--border-subtle); border-radius:1rem; padding:0.5rem 0.9rem; width:130px; font-family:monospace; font-size:0.9rem; color:var(--text-primary); }
+body.dark .actual-effect-panel input { background:#2a3a52; color:#e8f0fe; border-color:#3a5a7a; }
+.actual-effect-panel input:focus { border-color:var(--accent-secondary); outline:none; box-shadow:0 0 0 3px rgba(42,106,186,0.2); }
+.analysis-grid-full { display:grid; grid-template-columns:1fr; gap:1.8rem; margin-top:1rem; }
+.analysis-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:1.8rem; margin-top:1rem; }
+.analysis-chart-container { background:var(--bg-card); border-radius:1.5rem; padding:1rem; border:1px solid var(--border-subtle); transition:border-color 0.25s,box-shadow 0.25s; box-shadow:var(--shadow-light); }
+.analysis-chart-container:hover { border-color:var(--accent-tertiary); box-shadow:var(--shadow-hover); }
+@media (max-width:1000px) { .form-grid { grid-template-columns:1fr; } .analysis-grid { grid-template-columns:1fr; } }
+@media (max-width:700px) { .param-block-grid { grid-template-columns:1fr; } }
+@media (max-width:800px) { .capex-row { flex-direction:column; align-items:flex-start; } .split-row { flex-direction:column; } .tabs { padding:0 0.8rem; } .tab-btn { padding:0.7rem 1rem; font-size:0.8rem; } .effects-header { justify-content:center; } .analysis-grid { grid-template-columns:1fr; } .header-actions { margin-left:0.5rem; } }
+footer { font-size:0.7rem; text-align:center; padding:1rem; border-top:1px solid var(--border-subtle); color:var(--text-secondary); background:var(--bg-surface); }
+</style>
+</head>
+<body>
+<div class="app-container">
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="tab_params"><i class="bi bi-sliders2"></i> Параметры</button>
+    <button class="tab-btn" data-tab="tab_effects"><i class="bi bi-calculator-fill"></i> Калькулятор эффектов</button>
+    <button class="tab-btn" data-tab="tab_capex"><i class="bi bi-building"></i> Капитальные вложения</button>
+    <button class="tab-btn" data-tab="tab_amort"><i class="bi bi-graph-down"></i> Амортизация</button>
+    <button class="tab-btn" data-tab="tab_proptax"><i class="bi bi-bank"></i> Налог на имущество</button>
+    <button class="tab-btn" data-tab="tab_cashflow"><i class="bi bi-cash-stack"></i> Денежный поток</button>
+    <button class="tab-btn" data-tab="tab_analysis"><i class="bi bi-bar-chart-steps"></i> Анализ</button>
+    <div class="header-actions">
+      <button class="theme-toggle" id="exportExcelBtn" title="Выгрузить расчеты и параметры в Excel"><i class="bi bi-file-earmark-excel"></i></button>
+      <button class="theme-toggle" id="themeToggle" title="Переключить тему"><i class="bi bi-moon-stars"></i></button>
+    </div>
+  </div>
+
+  <!-- Параметры -->
+  <div id="tab_params" class="tab-content active">
+    <div class="params-container">
+      <div class="param-block">
+        <div class="param-block-title"><i class="bi bi-info-circle"></i> Информация о проекте</div>
+        <div class="param-block-grid">
+          <div class="param-card"><div class="card-title"><i class="bi bi-pencil-square"></i> Наименование</div><div class="input-row"><input type="text" id="project_name" value="Инновационный проект"></div></div>
+          <div class="param-card"><div class="card-title"><i class="bi bi-box-seam"></i> Оборудование "с"</div><div class="input-row"><input type="text" id="equipment_with" value="Инновационное оборудование"></div></div>
+          <div class="param-card"><div class="card-title"><i class="bi bi-box"></i> Оборудование "без"</div><div class="input-row"><input type="text" id="equipment_without" value="Традиционное оборудование"></div></div>
+        </div>
+      </div>
+      <div class="param-block">
+        <div class="param-block-title"><i class="bi bi-clock-history"></i> Временные параметры</div>
+        <div class="param-block-grid">
+          <div class="param-card"><div class="card-title"><i class="bi bi-calendar"></i> Год приведения денежных потоков</div><div class="input-row"><input type="number" id="base_year" value="2026"></div></div>
+          <div class="param-card"><div class="card-title"><i class="bi bi-hourglass-split"></i> Расчетный период (лет)</div><div class="input-row"><input type="number" id="calc_period" value="25"></div></div>
+          <div class="param-card"><div class="card-title"><i class="bi bi-clock-history"></i> Срок полезного использования (лет)</div><div class="input-row"><input type="number" id="useful_life" value="10"></div></div>
+        </div>
+        <div style="margin-top:1rem; font-size:0.9rem; color:var(--text-secondary);">
+          <span>Год начала проекта: <strong id="project_start_display">2026</strong> &nbsp;|&nbsp; Год старта эффектов: <strong id="benefit_start_display">—</strong></span>
+        </div>
+      </div>
+      <div class="param-block">
+        <div class="param-block-title"><i class="bi bi-graph-up-arrow"></i> Финансовые параметры</div>
+        <div class="param-block-grid">
+          <div class="param-card"><div class="card-title"><i class="bi bi-percent"></i> Норма дисконта (%)</div><div class="input-row"><input type="number" id="discount_rate" value="14" step="0.5"></div></div>
+          <div class="param-card"><div class="card-title"><i class="bi bi-graph-up"></i> Налог на прибыль (%)</div><div class="input-row"><input type="number" id="profit_tax_rate" value="25" step="1"></div></div>
+          <div class="param-card"><div class="card-title"><i class="bi bi-building"></i> Налог на имущество (%)</div><div class="input-row"><input type="number" id="prop_tax_rate" value="0" step="0.1"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Эффекты -->
+  <div id="tab_effects" class="tab-content">
+    <div class="effects-header">
+      <div class="summary-module">
+        <div class="summary-item"><span class="value" id="totalEffectRub">0</span><span class="label">рублей</span></div>
+        <div class="summary-item"><span class="value">ежегодно</span><span class="label"></span></div>
+      </div>
+    </div>
+    <div class="form-grid">
+      <div class="card"><div class="card-title"><i class="bi bi-eye-fill"></i> 1.1 Наблюдаемость</div>
+        <div class="input-row"><label>Сокращение времени (ч/год)</label><input type="number" id="obs_time" value="1000"></div>
+        <div class="input-row"><label>Стоимость топлива (руб/л)</label><input type="number" id="fuel_cost" value="60"></div>
+        <div class="input-row"><label>Средняя скорость (км/ч)</label><input type="number" id="speed_kmh" value="80"></div>
+        <div class="input-row"><label>Расход топлива (л/км)</label><input type="number" id="fuel_consumption" value="0.08"></div>
+        <div class="input-row"><label>Эффект (руб)</label><input type="text" id="obs_effect_display" readonly></div>
+      </div>
+      <div class="card"><div class="card-title"><i class="bi bi-diagram-3"></i> 1.2 Топология сети</div>
+        <div class="input-row"><label>Уд. затраты на ТОиР (руб/км)</label><input type="number" id="topo_cost_per_km" value="100"></div>
+        <div class="input-row"><label>Сокращение протяжённости (км)</label><input type="number" id="topo_km_reduce" value="1000"></div>
+        <div class="input-row"><label>Экономия (руб)</label><input type="text" id="topo_effect_display" readonly></div>
+      </div>
+      <div class="card"><div class="card-title"><i class="bi bi-lightning-charge-fill"></i> 1.3 Технологические потери</div>
+        <div class="input-row"><label>Потери "без" (кВт·ч)</label><input type="number" id="tech_loss_before" value="100000"></div>
+        <div class="input-row"><label>Потери "с" (кВт·ч)</label><input type="number" id="tech_loss_after" value="100"></div>
+        <div class="input-row"><label>Ставка (руб/кВт·ч)</label><input type="number" id="tech_rate" value="2"></div>
+        <div class="input-row"><label>Эффект (руб)</label><input type="text" id="tech_effect_display" readonly></div>
+      </div>
+      <div class="card"><div class="card-title"><i class="bi bi-arrow-repeat"></i> 1.4 Коммерческие потери</div>
+        <div class="input-row"><label>Потери "без" (кВт·ч)</label><input type="number" id="com_loss_before" value="0"></div>
+        <div class="input-row"><label>Потери "с" (кВт·ч)</label><input type="number" id="com_loss_after" value="0"></div>
+        <div class="input-row"><label>Ставка (руб/кВт·ч)</label><input type="number" id="com_rate" value="0"></div>
+        <div class="input-row"><label>Эффект (руб)</label><input type="text" id="com_effect_display" readonly></div>
+      </div>
+      <div class="card"><div class="card-title"><i class="bi bi-graph-up"></i> 1.5 Увеличение отпуска</div>
+        <div class="input-row"><label>Отпуск "без" (кВт·ч)</label><input type="number" id="supply_before" value="100000"></div>
+        <div class="input-row"><label>Отпуск "с" (кВт·ч)</label><input type="number" id="supply_after" value="200000"></div>
+        <div class="input-row"><label>Тариф (руб/кВт·ч)</label><input type="number" id="tariff_supply" value="2"></div>
+        <div class="input-row"><label>Выручка (руб)</label><input type="text" id="supply_effect_display" readonly></div>
+      </div>
+      <div class="card"><div class="card-title"><i class="bi bi-shield-shaded"></i> 1.6 Промбезопасность</div>
+        <div class="input-row"><label>Аварии "без" (шт)</label><input type="number" id="acc_before" value="20"></div>
+        <div class="input-row"><label>Аварии "с" (шт)</label><input type="number" id="acc_after" value="10"></div>
+        <div class="input-row"><label>Затраты на аварию (руб)</label><input type="number" id="acc_cost" value="100000"></div>
+        <div class="input-row"><label>Эффект (руб)</label><input type="text" id="acc_effect_display" readonly></div>
+      </div>
+      <div class="card"><div class="card-title"><i class="bi bi-tree-fill"></i> 1.7 НВОС</div>
+        <div class="input-row"><label>Платежи "без" (руб)</label><input type="number" id="nvos_before" value="100000"></div>
+        <div class="input-row"><label>Платежи "с" (руб)</label><input type="number" id="nvos_after" value="0"></div>
+        <div class="input-row"><label>Экономия (руб)</label><input type="text" id="nvos_effect_display" readonly></div>
+      </div>
+      <div class="card"><div class="card-title"><i class="bi bi-copyright"></i> 1.8 Роялти</div>
+        <div class="input-row"><label>База (руб)</label><input type="number" id="royalty_base" value="1000000"></div>
+        <div class="input-row"><label>Ставка (%)</label><input type="number" id="royalty_rate" value="15"></div>
+        <div class="input-row"><label>Поступления (руб)</label><input type="text" id="royalty_effect_display" readonly></div>
+      </div>
+      <div class="card"><div class="card-title"><i class="bi bi-tools"></i> Эксплуатационные затраты</div>
+        <div class="input-row"><label>Затраты "без" (руб)</label><input type="number" id="opex_before" value="0"></div>
+        <div class="input-row"><label>Затраты "с" (руб)</label><input type="number" id="opex_after" value="0"></div>
+        <div class="input-row"><label>Экономия (руб)</label><input type="text" id="opex_change_display" readonly></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Капитальные вложения -->
+  <div id="tab_capex" class="tab-content">
+    <div class="card">
+      <div class="card-title"><i class="bi bi-pie-chart-fill"></i> Сводные данные</div>
+      <div class="input-row"><label>Суммарно КВ "без" (млн руб):</label><input type="text" id="capex_without_total" readonly></div>
+      <div class="input-row"><label>Суммарно КВ "с" (млн руб):</label><input type="text" id="capex_with_total" readonly></div>
+      <div class="input-row"><label>НИОКР суммарно (млн руб):</label><input type="text" id="rnd_total_display" readonly></div>
+      <div class="input-row"><label>Изменение КВ (прирост):</label><input type="text" id="total_incremental" readonly></div>
+      <div class="input-row"><label>КВ+НИОКР всего:</label><input type="text" id="total_with_rnd" readonly></div>
+      <hr>
+      <div class="card-title">Инвестиции по годам (млн руб)</div>
+      <div id="capexDynamicList" class="capex-grid"></div>
+      <div style="display:flex; gap:12px; margin-top:20px;">
+        <button class="calc-btn" id="addCapexYearBtn"><i class="bi bi-plus-lg"></i> Добавить год</button>
+        <button class="calc-btn" id="removeLastCapexBtn"><i class="bi bi-trash3"></i> Удалить последний год</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Амортизация -->
+  <div id="tab_amort" class="tab-content">
+    <div class="card">
+      <div class="card-title">Амортизация</div>
+      <div class="split-row">
+        <div class="split-col">
+          <div class="table-wrapper"><table id="amortTable"><thead><tr><th>Год</th><th>Остаточная стоимость (млн руб)</th><th>Амортизация (млн руб)</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div class="split-col"><canvas id="amortChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Налог на имущество -->
+  <div id="tab_proptax" class="tab-content">
+    <div class="card">
+      <div class="card-title">Налог на имущество</div>
+      <div class="split-row">
+        <div class="split-col">
+          <div class="table-wrapper"><table id="propTaxTable"><thead><tr><th>Год</th><th>Остаточная стоимость на начало</th><th>Среднегодовая</th><th>Налог (млн руб)</th></tr></thead><tbody></tbody></table></div>
+        </div>
+        <div class="split-col"><canvas id="propTaxChart"></canvas></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Денежный поток -->
+  <div id="tab_cashflow" class="tab-content">
+    <div id="metricsPanel" class="metrics"></div>
+    <div class="actual-effect-panel">
+      <label><i class="bi bi-calendar-event"></i> Год для планируемого эффекта:</label>
+      <input type="number" id="actual_effect_year" value="2030">
+    </div>
+    <div class="table-wrapper">
+      <table id="cashflowTable"><thead><tr><th>Год</th><th>Операционный поток (млн руб)</th><th>Инвестиционный поток</th><th>Суммарный поток</th><th>Накопленный поток</th><th>Дисконтированный накопленный</th></tr></thead><tbody></tbody></table>
+    </div>
+  </div>
+
+  <!-- Анализ -->
+  <div id="tab_analysis" class="tab-content">
+    <div class="card">
+      <div class="card-title">Графический анализ</div>
+      <div class="analysis-grid-full"><div class="analysis-chart-container"><canvas id="cumDiscountedChart"></canvas><div style="text-align:center;">Накопленный дисконтированный поток</div></div></div>
+      <div class="analysis-grid">
+        <div class="analysis-chart-container"><canvas id="netCashflowChart"></canvas><div style="text-align:center;">Чистый денежный поток</div></div>
+        <div class="analysis-chart-container"><canvas id="operatingCFChart"></canvas><div style="text-align:center;">Операционный поток</div></div>
+        <div class="analysis-chart-container"><canvas id="investingCFChart"></canvas><div style="text-align:center;">Инвестиционный поток</div></div>
+      </div>
+    </div>
+  </div>
+  <footer>Модуль расчета инновационной эффективности (согласовано с Excel)</footer>
+</div>
+
+<script>
+function formatNumberWithSpaces(num, decimals = 0) {
+  if (num === undefined || num === null || isNaN(num)) num = 0;
+  if (decimals > 0) {
+    let fixed = num.toFixed(decimals);
+    let parts = fixed.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+    return parts.join('.');
+  } else {
+    return Math.round(num).toString().replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+  }
+}
+
+let capexYears = [];
+let amortChart = null, propTaxChart = null;
+let netChart = null, cumChart = null, operChart = null, invChart = null;
+
+// Определяем первый год с реальными инвестициями (динамический)
+function getProjectStart() {
+  for (let i = 0; i < capexYears.length; i++) {
+    if (capexYears[i].capex_without !== 0 || capexYears[i].capex_with !== 0 || capexYears[i].rnd !== 0) {
+      return capexYears[i].year;
+    }
+  }
+  return capexYears.length ? capexYears[0].year : 2026;
+}
+
+function getBenefitStart() {
+  let benefitStart = null;
+  let hasInvestment = false;
+  for (let i = 0; i < capexYears.length; i++) {
+    const inv = capexYears[i].capex_with + capexYears[i].rnd;
+    if (inv > 0) {
+      hasInvestment = true;
+    } else if (hasInvestment && inv === 0) {
+      benefitStart = capexYears[i].year;
+      break;
+    }
+  }
+  if (benefitStart === null) benefitStart = capexYears[capexYears.length-1]?.year || 2026;
+  return benefitStart;
+}
+
+function initCapexYears() {
+  const startYear = 2026;
+  const custom = {
+    2026: { wout: 5, w: 5, rnd: 5 },
+    2027: { wout: 5, w: 6, rnd: 3 },
+    2028: { wout: 5, w: 4, rnd: 2 },
+    2029: { wout: 5, w: 0, rnd: 2 },
+    2030: { wout: 5, w: 0, rnd: 0 },
+    2031: { wout: 5, w: 0, rnd: 0 },
+    2032: { wout: 5, w: 0, rnd: 1 }
+  };
+  const usefulLife = +document.getElementById('useful_life').value || 10;
+  const calcPeriod = +document.getElementById('calc_period').value || 25;
+  const maxYear = Math.max(2032, startYear + calcPeriod + 5);
+  capexYears = [];
+  for (let y = startYear; y <= maxYear; y++) {
+    if (custom[y]) {
+      capexYears.push({ year: y, capex_without: custom[y].wout, capex_with: custom[y].w, rnd: custom[y].rnd });
+    } else {
+      capexYears.push({ year: y, capex_without: 0, capex_with: 0, rnd: 0 });
+    }
+  }
+  updateProjectInfo();
+  renderCapexForm();
+}
+
+function renderCapexForm() {
+  const container = document.getElementById('capexDynamicList');
+  if (!container) return;
+  container.innerHTML = '';
+  capexYears.forEach((item, idx) => {
+    const totalWith = item.capex_with + item.rnd;
+    const placement = totalWith > 0 ? (totalWith - item.capex_without) : 0;
+    const div = document.createElement('div');
+    div.className = 'capex-row';
+    div.innerHTML = `
+      <div class="capex-year">${item.year}</div>
+      <div class="capex-field"><label>КВ "без"</label><input type="number" step="0.5" value="${item.capex_without}" class="capex-without-input" data-idx="${idx}"></div>
+      <div class="capex-field"><label>КВ "с"</label><input type="number" step="0.5" value="${item.capex_with}" class="capex-with-input" data-idx="${idx}"></div>
+      <div class="capex-field"><label>НИОКР</label><input type="number" step="0.5" value="${item.rnd}" class="capex-rnd-input" data-idx="${idx}"></div>
+      <div class="capex-field"><label>Постановка на баланс</label><div class="readonly-field">${formatNumberWithSpaces(placement, 2)}</div></div>
+      <div class="capex-field"><label>КВ+НИОКР</label><div class="readonly-field">${formatNumberWithSpaces(totalWith, 2)}</div></div>
+    `;
+    container.appendChild(div);
+  });
+  document.querySelectorAll('.capex-without-input').forEach(inp => inp.addEventListener('change', (e) => {
+    capexYears[+e.target.dataset.idx].capex_without = +e.target.value || 0;
+    fullRefresh();
+  }));
+  document.querySelectorAll('.capex-with-input').forEach(inp => inp.addEventListener('change', (e) => {
+    capexYears[+e.target.dataset.idx].capex_with = +e.target.value || 0;
+    fullRefresh();
+  }));
+  document.querySelectorAll('.capex-rnd-input').forEach(inp => inp.addEventListener('change', (e) => {
+    capexYears[+e.target.dataset.idx].rnd = +e.target.value || 0;
+    fullRefresh();
+  }));
+  updateCapexTotals();
+  updateProjectInfo();
+}
+
+function updateCapexTotals() {
+  let sumWithout = capexYears.reduce((s, i) => s + i.capex_without, 0);
+  let sumWith = capexYears.reduce((s, i) => s + i.capex_with, 0);
+  let sumRnd = capexYears.reduce((s, i) => s + i.rnd, 0);
+  let totalInc = capexYears.reduce((s, i) => s + (i.capex_with + i.rnd - i.capex_without), 0);
+  let totalWithRnd = sumWith + sumRnd;
+  document.getElementById('capex_without_total').value = formatNumberWithSpaces(sumWithout, 2);
+  document.getElementById('capex_with_total').value = formatNumberWithSpaces(sumWith, 2);
+  document.getElementById('rnd_total_display').value = formatNumberWithSpaces(sumRnd, 2);
+  document.getElementById('total_incremental').value = formatNumberWithSpaces(totalInc, 2);
+  document.getElementById('total_with_rnd').value = formatNumberWithSpaces(totalWithRnd, 2);
+}
+
+function updateProjectInfo() {
+  const projectStart = getProjectStart();
+  document.getElementById('project_start_display').textContent = projectStart;
+  document.getElementById('benefit_start_display').textContent = getBenefitStart();
+  return { projectStart, benefitStart: getBenefitStart() };
+}
+
+function computeEffects() {
+  let obs = (+document.getElementById('obs_time').value || 0) * (+document.getElementById('fuel_cost').value || 0) * 2 * (+document.getElementById('speed_kmh').value || 0) * (+document.getElementById('fuel_consumption').value || 0.08);
+  document.getElementById('obs_effect_display').value = formatNumberWithSpaces(obs, 0);
+  let topo = (+document.getElementById('topo_cost_per_km').value || 0) * (+document.getElementById('topo_km_reduce').value || 0);
+  document.getElementById('topo_effect_display').value = formatNumberWithSpaces(topo, 0);
+  let tech = (+document.getElementById('tech_rate').value || 0) * ((+document.getElementById('tech_loss_before').value || 0) - (+document.getElementById('tech_loss_after').value || 0));
+  document.getElementById('tech_effect_display').value = formatNumberWithSpaces(tech, 0);
+  let com = (+document.getElementById('com_rate').value || 0) * ((+document.getElementById('com_loss_before').value || 0) - (+document.getElementById('com_loss_after').value || 0));
+  document.getElementById('com_effect_display').value = formatNumberWithSpaces(com, 0);
+  let supply = ((+document.getElementById('supply_after').value || 0) - (+document.getElementById('supply_before').value || 0)) * (+document.getElementById('tariff_supply').value || 0);
+  document.getElementById('supply_effect_display').value = formatNumberWithSpaces(supply, 0);
+  let acc = ((+document.getElementById('acc_before').value || 0) - (+document.getElementById('acc_after').value || 0)) * (+document.getElementById('acc_cost').value || 0);
+  document.getElementById('acc_effect_display').value = formatNumberWithSpaces(acc, 0);
+  let nvos = (+document.getElementById('nvos_before').value || 0) - (+document.getElementById('nvos_after').value || 0);
+  document.getElementById('nvos_effect_display').value = formatNumberWithSpaces(nvos, 0);
+  let royalty = (+document.getElementById('royalty_base').value || 0) * (+document.getElementById('royalty_rate').value || 0) / 100;
+  document.getElementById('royalty_effect_display').value = formatNumberWithSpaces(royalty, 0);
+  let opex = (+document.getElementById('opex_before').value || 0) - (+document.getElementById('opex_after').value || 0);
+  document.getElementById('opex_change_display').value = formatNumberWithSpaces(opex, 0);
+  return { obs, topo, tech, com, supply, acc, nvos, royalty, opexChange: opex };
+}
+
+function updateSummary() {
+  const getRaw = (id) => +(document.getElementById(id)?.value?.replace(/\s/g, '') || 0);
+  const totalRub = getRaw('obs_effect_display') + getRaw('topo_effect_display') + getRaw('tech_effect_display') + getRaw('com_effect_display') + getRaw('supply_effect_display') + getRaw('acc_effect_display') + getRaw('nvos_effect_display') + getRaw('royalty_effect_display') + getRaw('opex_change_display');
+  document.getElementById('totalEffectRub').innerText = formatNumberWithSpaces(totalRub, 0);
+  return totalRub;
+}
+
+function getBalanceSchedules() {
+  if (!capexYears.length) return { years: [], residualValues: [], deprValues: [] };
+  const usefulLife = +document.getElementById('useful_life').value || 10;
+  const calcPeriod = +document.getElementById('calc_period').value || 25;
+  let incInvMap = new Map();
+  let placementMap = new Map();
+  capexYears.forEach(c => {
+    const inc = (c.capex_with + c.rnd) - c.capex_without;
+    incInvMap.set(c.year, inc);
+    placementMap.set(c.year, (c.capex_with + c.rnd > 0) ? inc : 0);
+  });
+  const projectStart = capexYears[0].year;
+  const relevant = capexYears.filter(c => c.capex_without !== 0 || c.capex_with !== 0 || c.rnd !== 0);
+  const lastRelevant = relevant.length ? Math.max(...relevant.map(c => c.year)) : projectStart;
+  const scheduleEnd = Math.max(projectStart + calcPeriod - 1, lastRelevant + usefulLife + 2);
+  let years = [];
+  for (let y = projectStart; y <= scheduleEnd; y++) years.push(y);
+  let startValues = [], deprVals = [], prevEnd = 0;
+  for (let y of years) {
+    let startVal = prevEnd + (incInvMap.get(y - 1) || 0);
+    let depr = 0;
+    for (let pYear of placementMap.keys()) {
+      if (pYear < y && (y - pYear) <= usefulLife) depr += placementMap.get(pYear) / usefulLife;
+    }
+    let endVal = startVal - depr;
+    startValues.push(startVal);
+    deprVals.push(depr);
+    prevEnd = endVal;
+  }
+  return { years, residualValues: startValues, deprValues: deprVals };
+}
+
+function getChartColors() {
+  const isDark = document.body.classList.contains('dark');
+  return { primary: isDark ? '#5b8cdf' : '#19307e', secondary: isDark ? '#8bb4f0' : '#2075de', tertiary: '#28ace2', senary: '#ffc000', bgFill: isDark ? 'rgba(91,140,223,0.1)' : 'rgba(25,48,126,0.05)', grid: isDark ? '#2d3543' : '#e2e8f0', text: isDark ? '#eef2ff' : '#19307e', secText: isDark ? '#9aa8bf' : '#4a5b6e' };
+}
+
+function updateAmortization() {
+  const { years, residualValues, deprValues } = getBalanceSchedules();
+  const tbody = document.querySelector('#amortTable tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    for (let i = 0; i < years.length; i++) {
+      let endVal = residualValues[i] - deprValues[i];
+      tbody.innerHTML += `<tr><td>${years[i]}</td><td>${formatNumberWithSpaces(endVal, 2)}</td><td>${formatNumberWithSpaces(deprValues[i], 2)}</td></tr>`;
+    }
+  }
+  if (typeof Chart === 'undefined') return;
+  const ctx = document.getElementById('amortChart')?.getContext('2d');
+  if (ctx) {
+    if (amortChart) amortChart.destroy();
+    const clr = getChartColors();
+    let endValues = residualValues.map((start, i) => start - deprValues[i]);
+    amortChart = new Chart(ctx, { type: 'line', data: { labels: years, datasets: [
+      { label: 'Остаточная стоимость (млн руб)', data: endValues, borderColor: clr.primary, tension: 0.2, fill: false, yAxisID: 'y' },
+      { label: 'Амортизация (млн руб)', data: deprValues, borderColor: clr.senary, borderDash: [5,5], fill: false, yAxisID: 'y1' }
+    ]}, options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { labels: { color: clr.text } } }, scales: { y: { title: { display: true, text: 'Остаточная стоимость', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, y1: { position: 'right', title: { text: 'Амортизация', color: clr.secText }, ticks: { color: clr.text }, grid: { drawOnChartArea: false } } } } });
+  }
+}
+
+function updatePropTax() {
+  const { years, residualValues, deprValues } = getBalanceSchedules();
+  const propRate = (+document.getElementById('prop_tax_rate').value || 0) / 100;
+  let rows = [], taxVals = [], yearList = [];
+  for (let i = 0; i < years.length; i++) {
+    let start = residualValues[i], end = start - deprValues[i], avg = (start + end) / 2, tax = avg * propRate;
+    rows.push({ year: years[i], start, avg, tax });
+    yearList.push(years[i]);
+    taxVals.push(tax);
+  }
+  const tbody = document.querySelector('#propTaxTable tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    rows.forEach(r => { tbody.innerHTML += `<tr><td>${r.year}</td><td>${formatNumberWithSpaces(r.start, 2)}</td><td>${formatNumberWithSpaces(r.avg, 2)}</td><td>${formatNumberWithSpaces(r.tax, 2)}</td></tr>`; });
+  }
+  if (typeof Chart === 'undefined') return;
+  const ctx = document.getElementById('propTaxChart')?.getContext('2d');
+  if (ctx) {
+    if (propTaxChart) propTaxChart.destroy();
+    const clr = getChartColors();
+    propTaxChart = new Chart(ctx, { type: 'line', data: { labels: yearList, datasets: [{ label: 'Налог на имущество (млн руб)', data: taxVals, borderColor: clr.primary, backgroundColor: clr.bgFill, fill: true, tension: 0.2 }] }, options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } } } } });
+  }
+}
+
+function calculateCashFlows() {
+  if (!capexYears.length) return { cashflows: [], npv: 0, irr: '0.00', discountedPayback: null, benefitAnnual: 0, discFlows: [], discPayYear: null };
+  const effects = computeEffects();
+  const annualBenefitRub = effects.obs + effects.topo + effects.tech + effects.com + effects.supply + effects.acc + effects.nvos + effects.royalty + effects.opexChange;
+  const annualBenefit = annualBenefitRub / 1e6;
+  const profitTax = (+document.getElementById('profit_tax_rate').value || 25) / 100;
+  const propTaxRate = (+document.getElementById('prop_tax_rate').value || 0) / 100;
+  const discount = (+document.getElementById('discount_rate').value || 14) / 100;
+  const baseYear = +document.getElementById('base_year').value || 2026;
+  const calcPeriod = +document.getElementById('calc_period').value || 25;
+  const usefulLife = +document.getElementById('useful_life').value || 10;
+  const projectStart = capexYears[0].year;
+  const actualProjectStart = getProjectStart();
+  const benefitStart = getBenefitStart();
+  const endYearExclusive = actualProjectStart + calcPeriod;
+  let allYears = [];
+  for (let y = projectStart; y < endYearExclusive; y++) allYears.push(y);
+  let incInvMap = new Map(), invWithMap = new Map(), placementMap = new Map();
+  capexYears.forEach(c => {
+    const inc = (c.capex_with + c.rnd) - c.capex_without;
+    incInvMap.set(c.year, inc);
+    invWithMap.set(c.year, c.capex_with + c.rnd);
+    placementMap.set(c.year, (c.capex_with + c.rnd > 0) ? inc : 0);
+  });
+  let cashflows = [], cumulative = 0, discCum = 0, discFlows = [], prevEnd = 0;
+  for (let idx = 0; idx < allYears.length; idx++) {
+    let y = allYears[idx];
+    let hasInvThisYear = (invWithMap.get(y) || 0) > 0;
+    let active = (y >= benefitStart && !hasInvThisYear);
+    let operIncome = active ? annualBenefit : 0;
+    let startVal = prevEnd + (incInvMap.get(y - 1) || 0);
+    let depr = 0;
+    for (let pYear of placementMap.keys()) {
+      if (pYear < y && (y - pYear) <= usefulLife) depr += placementMap.get(pYear) / usefulLife;
+    }
+    let endVal = startVal - depr;
+    let avgVal = (startVal + endVal) / 2;
+    let propTax = avgVal * propTaxRate;
+    let profitBeforeTax = operIncome - depr - propTax;
+    let incomeTax = profitBeforeTax > 0 ? profitBeforeTax * profitTax : 0;
+    let ocf = operIncome - propTax - incomeTax;
+    let inv = -(incInvMap.get(y) || 0);
+    let net = ocf + inv;
+    cumulative += net;
+    let t = y - baseYear;
+    let df = 1 / Math.pow(1 + discount, t >= 0 ? t : 0);
+    let discNet = net * df;
+    discCum += discNet;
+    discFlows.push({ year: y, discNet, discCumulative: discCum });
+    cashflows.push({ year: y, ocf, icf: inv, net, cum: cumulative, disc: discCum });
+    prevEnd = endVal;
+  }
+  let npv = cashflows.length ? cashflows[cashflows.length-1].disc : 0;
+  let irr = 0.05;
+  for (let iter = 0; iter < 100; iter++) {
+    let npv2 = 0, dnpv = 0;
+    for (let t = 0; t < cashflows.length; t++) { let cf = cashflows[t].net; npv2 += cf / Math.pow(1 + irr, t); dnpv += -t * cf / Math.pow(1 + irr, t+1); }
+    if (Math.abs(npv2) < 1e-7) break;
+    let newR = irr - npv2 / dnpv;
+    if (Math.abs(newR - irr) < 1e-7) { irr = newR; break; }
+    irr = newR;
+    if (irr < -0.99) { irr = -0.99; break; }
+  }
+  let irrPercent = irr * 100;
+
+  // ИСПРАВЛЕННАЯ окупаемость: ищем пересечение нуля ПОСЛЕ того, как поток ушёл в минус
+  let discPayYear = null;
+  let discountedPayback = null;
+  let hasBeenNegative = false;
+  for (let i = 0; i < discFlows.length; i++) {
+    if (discFlows[i].discCumulative < 0) hasBeenNegative = true;
+    if (hasBeenNegative && discFlows[i].discCumulative >= 0) {
+      discPayYear = discFlows[i].year;
+      const flow = discFlows[i].discNet;
+      const cum = discFlows[i].discCumulative;
+      discountedPayback = (discPayYear - actualProjectStart) + (flow > 0 ? cum / flow : 0);
+      break;
+    }
+  }
+
+  return { cashflows, npv, irr: irrPercent.toFixed(2), discountedPayback, benefitAnnual: annualBenefit, discFlows, discPayYear };
+}
+
+function displayResults() {
+  const { cashflows, npv, irr, discountedPayback, benefitAnnual, discFlows, discPayYear } = calculateCashFlows();
+  const tbody = document.querySelector('#cashflowTable tbody');
+  if (tbody) {
+    tbody.innerHTML = '';
+    cashflows.forEach(cf => { tbody.innerHTML += `<tr><td>${cf.year}</td><td>${formatNumberWithSpaces(cf.ocf, 2)}</td><td>${formatNumberWithSpaces(cf.icf, 2)}</td><td>${formatNumberWithSpaces(cf.net, 2)}</td><td>${formatNumberWithSpaces(cf.cum, 2)}</td><td>${formatNumberWithSpaces(cf.disc, 2)}</td></tr>`; });
+  }
+  const payStr = discountedPayback !== null ? discountedPayback.toFixed(2) + " лет" : "> горизонта";
+  const actualYear = +document.getElementById('actual_effect_year').value;
+  const found = cashflows.find(cf => cf.year === actualYear);
+  const actualEffect = found ? formatNumberWithSpaces(found.cum, 2) + " млн ₽" : "—";
+  const metricsPanel = document.getElementById('metricsPanel');
+  if (metricsPanel) {
+    metricsPanel.innerHTML = `
+      <div class="metric-card"><div class="metric-label">NPV</div><div class="metric-value">${formatNumberWithSpaces(npv, 2)} млн ₽</div></div>
+      <div class="metric-card"><div class="metric-label">IRR</div><div class="metric-value">${irr}%</div></div>
+      <div class="metric-card"><div class="metric-label">Срок окупаемости (диск.)</div><div class="metric-value">${payStr}</div></div>
+      <div class="metric-card"><div class="metric-label">Годовой эффект</div><div class="metric-value">${formatNumberWithSpaces(benefitAnnual, 2)} млн ₽</div></div>
+      <div class="metric-card highlight"><div class="metric-label">Планируемый эффект (на ${actualYear} г.)</div><div class="metric-value">${actualEffect}</div></div>
+    `;
+  }
+  updateAnalysisCharts(cashflows, discFlows, discPayYear);
+}
+
+function updateAnalysisCharts(cashflows, discFlows, discPayYear) {
+  if (typeof Chart === 'undefined') return;
+  try {
+    const years = cashflows.map(cf => cf.year);
+    const netVals = cashflows.map(cf => cf.net);
+    const cumVals = discFlows.map(df => df.discCumulative);
+    const operVals = cashflows.map(cf => cf.ocf);
+    const invVals = cashflows.map(cf => cf.icf);
+    const clr = getChartColors();
+    const safeChart = (id, createFunc) => { const canvas = document.getElementById(id); if (!canvas) return; const ctx = canvas.getContext('2d'); if (!ctx) return; createFunc(ctx); };
+    safeChart('cumDiscountedChart', (ctx) => {
+      if (cumChart) cumChart.destroy();
+      let dataSets = [{ label: 'Накопленный дисконтированный поток', data: cumVals, borderColor: clr.secondary, backgroundColor: clr.bgFill, fill: true, tension: 0.2 }];
+      if (discPayYear) {
+        const idx = years.indexOf(discPayYear);
+        if (idx !== -1) {
+          dataSets.push({ label: 'Точка окупаемости', data: years.map((y, i) => i === idx ? cumVals[idx] : null), borderColor: '#00aa00', backgroundColor: '#00aa00', pointRadius: 10, pointHoverRadius: 14, showLine: false, pointStyle: 'circle', borderWidth: 2 });
+        }
+      }
+      cumChart = new Chart(ctx, { type: 'line', data: { labels: years, datasets: dataSets }, options: { responsive: true, plugins: { legend: { labels: { color: clr.text } }, tooltip: { callbacks: { label: (ctx) => `${ctx.raw?.toFixed(2)} млн руб` } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } } });
+    });
+    safeChart('netCashflowChart', (ctx) => { if (netChart) netChart.destroy(); netChart = new Chart(ctx, { type: 'bar', data: { labels: years, datasets: [{ label: 'Чистый денежный поток', data: netVals, backgroundColor: clr.primary }] }, options: { responsive: true, plugins: { legend: { labels: { color: clr.text } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } } }); });
+    safeChart('operatingCFChart', (ctx) => { if (operChart) operChart.destroy(); operChart = new Chart(ctx, { type: 'line', data: { labels: years, datasets: [{ label: 'Операционный поток', data: operVals, borderColor: clr.tertiary, tension: 0.2 }] }, options: { responsive: true, plugins: { legend: { labels: { color: clr.text } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } } }); });
+    safeChart('investingCFChart', (ctx) => { if (invChart) invChart.destroy(); invChart = new Chart(ctx, { type: 'bar', data: { labels: years, datasets: [{ label: 'Инвестиционный поток', data: invVals, backgroundColor: clr.senary }] }, options: { responsive: true, plugins: { legend: { labels: { color: clr.text } } }, scales: { y: { title: { display: true, text: 'млн руб', color: clr.secText }, ticks: { color: clr.text }, grid: { color: clr.grid } }, x: { ticks: { color: clr.text }, grid: { color: clr.grid } } } } }); });
+  } catch (e) { console.warn("Ошибка при построении графиков", e); }
+}
+
+function exportToExcel() {
+  if (typeof XLSX === 'undefined') { alert('Библиотека для выгрузки в Excel не загрузилась.'); return; }
+  const num = (v, d = 6) => { const n = Number(v); return isFinite(n) ? Number(n.toFixed(d)) : 0; };
+  const getNum = (id) => +document.getElementById(id)?.value || 0;
+  const getText = (id) => document.getElementById(id)?.value || '';
+  const wb = XLSX.utils.book_new();
+  const projectStart = getProjectStart();
+  const benefitStart = getBenefitStart();
+  const wsParams = XLSX.utils.aoa_to_sheet([['Показатель', 'Значение'], ['Наименование проекта', getText('project_name')], ['Год начала проекта', projectStart], ['Год старта эффектов', benefitStart], ['Расчетный период, лет', getNum('calc_period')], ['Срок полезного использования, лет', getNum('useful_life')], ['Норма дисконта, %', getNum('discount_rate')], ['Налог на прибыль, %', getNum('profit_tax_rate')], ['Налог на имущество, %', getNum('prop_tax_rate')]]);
+  wsParams['!cols'] = [{ wch: 45 }, { wch: 35 }];
+  XLSX.utils.book_append_sheet(wb, wsParams, 'Параметры');
+  const eff = computeEffects();
+  const totalAnnualRub = eff.obs + eff.topo + eff.tech + eff.com + eff.supply + eff.acc + eff.nvos + eff.royalty + eff.opexChange;
+  const wsEffects = XLSX.utils.aoa_to_sheet([['Показатель', 'Значение (руб)', 'Значение (млн руб)'], ['1.1 Наблюдаемость', num(eff.obs, 2), num(eff.obs / 1e6)], ['1.2 Топология', num(eff.topo, 2), num(eff.topo / 1e6)], ['1.3 Тех. потери', num(eff.tech, 2), num(eff.tech / 1e6)], ['1.4 Ком. потери', num(eff.com, 2), num(eff.com / 1e6)], ['1.5 Отпуск', num(eff.supply, 2), num(eff.supply / 1e6)], ['1.6 Промбезопасность', num(eff.acc, 2), num(eff.acc / 1e6)], ['1.7 НВОС', num(eff.nvos, 2), num(eff.nvos / 1e6)], ['1.8 Роялти', num(eff.royalty, 2), num(eff.royalty / 1e6)], ['2 Экспл. затраты', num(eff.opexChange, 2), num(eff.opexChange / 1e6)], ['ИТОГО', num(totalAnnualRub, 2), num(totalAnnualRub / 1e6)]]);
+  wsEffects['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 20 }];
+  XLSX.utils.book_append_sheet(wb, wsEffects, 'Эффекты');
+  const capexAOA = [['Год', 'КВ без', 'КВ с', 'НИОКР', 'Изменение КВ']];
+  capexYears.forEach(c => { capexAOA.push([c.year, num(c.capex_without), num(c.capex_with), num(c.rnd), num((c.capex_with + c.rnd) - c.capex_without)]); });
+  const wsCapex = XLSX.utils.aoa_to_sheet(capexAOA);
+  wsCapex['!cols'] = [{ wch: 10 }, { wch: 15 }, { wch: 15 }, { wch: 12 }, { wch: 18 }];
+  XLSX.utils.book_append_sheet(wb, wsCapex, 'КВ');
+  const cf = calculateCashFlows();
+  const cashAOA = [['Показатель', 'Значение'], ['NPV, млн руб', num(cf.npv)], ['IRR, %', num(cf.irr, 2)], ['Срок окупаемости, лет', cf.discountedPayback !== null ? num(cf.discountedPayback, 2) : '> горизонта'], [], ['Год', 'Операционный', 'Инвестиционный', 'Суммарный', 'Накопленный', 'Диск. накопленный']];
+  cf.cashflows.forEach(r => { cashAOA.push([r.year, num(r.ocf), num(r.icf), num(r.net), num(r.cum), num(r.disc)]); });
+  const wsCash = XLSX.utils.aoa_to_sheet(cashAOA);
+  wsCash['!cols'] = [{ wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 20 }, { wch: 25 }];
+  XLSX.utils.book_append_sheet(wb, wsCash, 'Денежный поток');
+  XLSX.writeFile(wb, `Инновационный_проект_${new Date().toISOString().slice(0, 10)}.xlsx`);
+}
+
+function fullRefresh() {
+  updateCapexTotals();
+  updateAmortization();
+  updatePropTax();
+  if (document.getElementById('tab_cashflow').classList.contains('active')) displayResults();
+  if (document.getElementById('tab_analysis').classList.contains('active')) {
+    const { cashflows, discFlows, discPayYear } = calculateCashFlows();
+    updateAnalysisCharts(cashflows, discFlows, discPayYear);
+  }
+  updateSummary();
+  updateProjectInfo();
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+  initCapexYears();
+  computeEffects();
+  updateSummary();
+  const themeBtn = document.getElementById('themeToggle');
+  function applyTheme(theme) {
+    if (theme === 'dark') { document.body.classList.add('dark'); themeBtn.innerHTML = '<i class="bi bi-sun"></i>'; }
+    else { document.body.classList.remove('dark'); themeBtn.innerHTML = '<i class="bi bi-moon-stars"></i>'; }
+    localStorage.setItem('theme', theme);
+  }
+  applyTheme(localStorage.getItem('theme') === 'dark' ? 'dark' : 'light');
+  themeBtn.addEventListener('click', () => { applyTheme(document.body.classList.contains('dark') ? 'light' : 'dark'); fullRefresh(); });
+  document.getElementById('exportExcelBtn')?.addEventListener('click', exportToExcel);
+  const allTabs = document.querySelectorAll('.tab-btn[data-tab]');
+  const contents = document.querySelectorAll('.tab-content');
+  allTabs.forEach(btn => {
+    btn.addEventListener('click', () => {
+      const tabId = btn.getAttribute('data-tab');
+      contents.forEach(c => c.classList.remove('active'));
+      document.getElementById(tabId).classList.add('active');
+      allTabs.forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      if (tabId === 'tab_amort') updateAmortization();
+      if (tabId === 'tab_proptax') updatePropTax();
+      if (tabId === 'tab_cashflow') displayResults();
+      if (tabId === 'tab_analysis') { const r = calculateCashFlows(); updateAnalysisCharts(r.cashflows, r.discFlows, r.discPayYear); }
+    });
+  });
+  document.querySelector('.tab-btn[data-tab="tab_params"]')?.classList.add('active');
+  document.getElementById('tab_params')?.classList.add('active');
+  contents.forEach(c => { if (c.id !== 'tab_params') c.classList.remove('active'); });
+  ['base_year', 'calc_period', 'useful_life', 'discount_rate', 'profit_tax_rate', 'prop_tax_rate'].forEach(id => {
+    document.getElementById(id)?.addEventListener('change', () => {
+      if (id === 'useful_life' || id === 'calc_period') initCapexYears();
+      else fullRefresh();
+    });
+  });
+  document.getElementById('actual_effect_year')?.addEventListener('change', displayResults);
+  document.getElementById('addCapexYearBtn')?.addEventListener('click', () => {
+    capexYears.push({ year: capexYears.length ? capexYears[capexYears.length-1].year + 1 : 2026, capex_without: 0, capex_with: 0, rnd: 0 });
+    renderCapexForm(); fullRefresh();
+  });
+  document.getElementById('removeLastCapexBtn')?.addEventListener('click', () => {
+    if (capexYears.length > 1) capexYears.pop();
+    renderCapexForm(); fullRefresh();
+  });
+  document.querySelectorAll('#tab_effects input').forEach(inp => inp.addEventListener('input', () => { computeEffects(); updateSummary(); fullRefresh(); }));
+  fullRefresh();
+});
+</script>
+</body>
+</html>
