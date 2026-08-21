@@ -489,6 +489,19 @@ function updateCapexTotals() {
   if (el5) el5.value = formatNumberWithSpaces(sumWith + sumRnd, 2);
 }
 
+function updateCapexReadonlyFields() {
+  const rows = document.querySelectorAll('.capex-row');
+  rows.forEach((row, idx) => {
+    if (!capexYears[idx]) return;
+    const item = capexYears[idx];
+    const totalWith = item.capex_with + item.rnd;
+    const placement = totalWith > 0 ? (totalWith - item.capex_without) : 0;
+    const readonlyFields = row.querySelectorAll('.readonly-field');
+    if (readonlyFields[0]) readonlyFields[0].textContent = formatNumberWithSpaces(placement, 2);
+    if (readonlyFields[1]) readonlyFields[1].textContent = formatNumberWithSpaces(totalWith, 2);
+  });
+}
+
 function updateProjectInfo() {
   setText('project_start_display', getProjectStart());
   setText('benefit_start_display', getBenefitStart());
@@ -1089,6 +1102,7 @@ function resetAllInputs() {
 
 function fullRefresh() {
   updateCapexTotals();
+  updateCapexReadonlyFields();
   updateAmortization();
   updatePropTax();
   updateProjectInfo();
