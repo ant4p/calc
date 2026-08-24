@@ -1,5 +1,4 @@
 <!DOCTYPE html>
-{% load static %}
 <html lang="ru">
 <head>
 <meta charset="UTF-8">
@@ -7,7 +6,6 @@
 <title>Инновационный калькулятор эффективности</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-<link rel="shortcut icon" href="{% static 'src/images/favicon.ico' %}">
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
@@ -391,6 +389,13 @@ function getBenefitStart() {
   return benefitStart;
 }
 
+function getDisplayCapexValues(idx) {
+  const src = idx > 0 ? capexYears[idx - 1] : null;
+  const totalWith = src ? (src.capex_with + src.rnd) : 0;
+  const placement = (src && totalWith > 0) ? (totalWith - src.capex_without) : 0;
+  return { totalWith, placement };
+}
+
 function buildCapexYears(preserve = false) {
   const startYear = 2026;
   const calcPeriod = Math.max(1, getVal('calc_period', 25));
@@ -442,8 +447,7 @@ function renderCapexForm() {
   container.innerHTML = '';
 
   capexYears.forEach((item, idx) => {
-    const totalWith = item.capex_with + item.rnd;
-    const placement = totalWith > 0 ? (totalWith - item.capex_without) : 0;
+    const { totalWith, placement } = getDisplayCapexValues(idx);
 
     const div = document.createElement('div');
     div.className = 'capex-row';
@@ -495,9 +499,7 @@ function updateCapexReadonlyFields() {
   const rows = document.querySelectorAll('.capex-row');
   rows.forEach((row, idx) => {
     if (!capexYears[idx]) return;
-    const item = capexYears[idx];
-    const totalWith = item.capex_with + item.rnd;
-    const placement = totalWith > 0 ? (totalWith - item.capex_without) : 0;
+    const { totalWith, placement } = getDisplayCapexValues(idx);
     const readonlyFields = row.querySelectorAll('.readonly-field');
     if (readonlyFields[0]) readonlyFields[0].textContent = formatNumberWithSpaces(placement, 2);
     if (readonlyFields[1]) readonlyFields[1].textContent = formatNumberWithSpaces(totalWith, 2);
@@ -705,32 +707,22 @@ function updatePropTax() {
 }
 
 function calcIRR(netFlows) {
-  if (!netFlows || netFlows.length < 2) return 0;
-  if (netFlows.every(x => Math.abs(x) < 1e-12)) return 0;
+  if (!netFlows || netFlows.length < 2) return null;
+
+  const hasPos = netFlows.some(x => x > 1e-12);
+  const hasNeg = netFlows.some(x => x < -1e-12);
+  if (!hasPos || !hasNeg) return null;
 
   const npv = r => netFlows.reduce((s, cf, t) => s + cf / Math.pow(1 + r, t), 0);
 
   let lo = -0.9999, hi = 10;
   let fLo = npv(lo), fHi = npv(hi);
 
-  if (!isFinite(fLo) || !isFinite(fHi)) return 0;
+  if (!isFinite(fLo) || !isFinite(fHi)) return null;
   if (Math.abs(fLo) < 1e-7) return lo;
   if (Math.abs(fHi) < 1e-7) return hi;
 
-  if (fLo * fHi > 0) {
-    let best = 0;
-    let bestAbs = Math.abs(npv(0));
-
-    for (let r = -0.99; r <= 10; r += 0.01) {
-      const v = npv(r);
-      if (isFinite(v) && Math.abs(v) < bestAbs) {
-        bestAbs = Math.abs(v);
-        best = r;
-      }
-    }
-
-    return best;
-  }
+  if (fLo * fHi > 0) return null;
 
   for (let i = 0; i < 100; i++) {
     const mid = (lo + hi) / 2;
@@ -753,7 +745,7 @@ function calcIRR(netFlows) {
 
 function calculateCashFlows() {
   if (!capexYears.length) {
-    return { cashflows: [], npv: 0, irr: '0.00', discountedPayback: null, benefitAnnual: 0, discFlows: [], discPayYear: null };
+    return { cashflows: [], npv: 0, irr: null, discountedPayback: null, benefitAnnual: 0, discFlows: [], discPayYear: null };
   }
 
   const effects = computeEffects();
@@ -835,30 +827,35 @@ function calculateCashFlows() {
   }
 
   const npv = cashflows.length ? cashflows[cashflows.length - 1].disc : 0;
-  const irr = calcIRR(cashflows.map(x => x.net)) * 100;
-  const irrStr = isFinite(irr) ? irr.toFixed(2) : '0.00';
+
+  const irrRaw = calcIRR(cashflows.map(x => x.net));
+  // ВНД не показываем, если ЧДД отрицательный
+  const irrStr = (irrRaw === null || npv < -1e-9) ? null : (irrRaw * 100).toFixed(2);
 
   let discPayYear = null;
   let discountedPayback = null;
-  let hasBeenNegative = false;
 
-  for (let i = 0; i < discFlows.length; i++) {
-    const cum = discFlows[i].discCumulative;
+  if (npv >= -1e-9) {
+    let hasBeenNegative = false;
 
-    if (cum < -1e-12) hasBeenNegative = true;
+    for (let i = 0; i < discFlows.length; i++) {
+      const cum = discFlows[i].discCumulative;
 
-    if (hasBeenNegative && cum >= -1e-12) {
-      discPayYear = discFlows[i].year;
-      const flow = discFlows[i].discNet;
-      const positiveCum = Math.max(0, cum);
-      discountedPayback = (discPayYear - actualProjectStart) + (flow > 0 ? positiveCum / flow : 0);
-      break;
+      if (cum < -1e-12) hasBeenNegative = true;
+
+      if (hasBeenNegative && cum >= -1e-12) {
+        discPayYear = discFlows[i].year;
+        const flow = discFlows[i].discNet;
+        const positiveCum = Math.max(0, cum);
+        discountedPayback = (discPayYear - actualProjectStart) + (flow > 0 ? positiveCum / flow : 0);
+        break;
+      }
     }
-  }
 
-  if (!hasBeenNegative && discFlows.length && discFlows[discFlows.length - 1].discCumulative >= 0) {
-    discountedPayback = 0;
-    discPayYear = discFlows[0].year;
+    if (!hasBeenNegative && discFlows.length && discFlows[discFlows.length - 1].discCumulative >= 0) {
+      discountedPayback = 0;
+      discPayYear = discFlows[0].year;
+    }
   }
 
   return {
@@ -896,6 +893,8 @@ function displayResults() {
     ? discountedPayback.toFixed(2) + ' лет'
     : '> горизонта';
 
+  const irrDisplay = irr === null ? '—' : irr + '%';
+
   const actualYear = getVal('actual_effect_year', 2030);
   const found = cashflows.find(cf => cf.year === actualYear);
   const actualEffect = found ? formatNumberWithSpaces(found.cum, 2) + ' млн ₽' : '—';
@@ -904,7 +903,7 @@ function displayResults() {
   if (metricsPanel) {
     metricsPanel.innerHTML = `
       <div class="metric-card"><div class="metric-label">NPV</div><div class="metric-value">${formatNumberWithSpaces(npv, 2)} млн ₽</div></div>
-      <div class="metric-card"><div class="metric-label">IRR</div><div class="metric-value">${irr}%</div></div>
+      <div class="metric-card"><div class="metric-label">IRR</div><div class="metric-value">${irrDisplay}</div></div>
       <div class="metric-card"><div class="metric-label">Срок окупаемости (диск.)</div><div class="metric-value">${payStr}</div></div>
       <div class="metric-card"><div class="metric-label">Годовой эффект</div><div class="metric-value">${formatNumberWithSpaces(benefitAnnual, 2)} млн ₽</div></div>
       <div class="metric-card highlight"><div class="metric-label">Планируемый эффект (на ${actualYear} г.)</div><div class="metric-value">${actualEffect}</div></div>
@@ -1027,7 +1026,6 @@ function exportToExcel() {
 
     const wb = XLSX.utils.book_new();
 
-    // Лист "Параметры" — со всеми полями, включая оборудование "с" и "без"
     const params = [
       ['Показатель', 'Значение'],
       ['Наименование проекта', getText('project_name')],
@@ -1081,7 +1079,7 @@ function exportToExcel() {
     const cashAOA = [
       ['Показатель', 'Значение'],
       ['NPV, млн руб', cf.npv],
-      ['IRR, %', cf.irr],
+      ['IRR, %', cf.irr === null ? '—' : cf.irr],
       ['Срок окупаемости, лет', cf.discountedPayback === null ? '> горизонта' : cf.discountedPayback],
       [],
       ['Год', 'Операционный', 'Инвестиционный', 'Суммарный', 'Накопленный', 'Диск. накопленный']
@@ -1095,7 +1093,6 @@ function exportToExcel() {
     wsCash['!cols'] = [{ wch: 12 }, { wch: 20 }, { wch: 20 }, { wch: 18 }, { wch: 20 }, { wch: 25 }];
     XLSX.utils.book_append_sheet(wb, wsCash, 'Денежный поток');
 
-    // Имя файла: Наименование (если есть) + дата
     const rawName = getText('project_name').trim();
     const safeName = (rawName || 'Инновационный проект').replace(/[\\/:*?"<>|]/g, '_');
     const dateStr = new Date().toISOString().slice(0, 10);
