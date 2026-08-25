@@ -89,18 +89,24 @@ body.dark .capex-field input{background:#2a3a52;color:#e8f0fe;border-color:#3a5a
 .param-card .card-title{margin-bottom:.5rem;font-size:.9rem;border-left:none;padding-left:0;color:var(--text-secondary)}
 .param-card .input-row{margin-bottom:0}
 .param-card .input-row input{width:100%}
-.effects-header{display:flex;flex-wrap:wrap;align-items:center;justify-content:flex-end;gap:1.5rem;margin-bottom:2rem;background:var(--metric-bg);border-radius:1.8rem;padding:1rem 1.5rem;color:var(--text-on-accent)}
-.summary-module{background:rgba(255,255,255,.08);border-radius:1.5rem;padding:.5rem 1.2rem;border:1px solid rgba(255,255,255,.15);display:inline-flex;align-items:baseline;gap:1.5rem;flex-wrap:wrap}
-.summary-item{display:flex;align-items:baseline;gap:.5rem;font-size:.9rem}
+.effects-header{display:flex;flex-wrap:wrap;align-items:stretch;justify-content:flex-end;gap:1.5rem;margin-bottom:2rem;background:var(--metric-bg);border-radius:1.8rem;padding:1rem 1.5rem;color:var(--text-on-accent)}
+.summary-module{background:rgba(255,255,255,.08);border-radius:1.5rem;padding:.6rem 1.2rem;border:1px solid rgba(255,255,255,.15);display:inline-flex;align-items:center;gap:1.5rem;flex-wrap:wrap}
+.summary-item{display:flex;align-items:center;gap:.5rem;font-size:.9rem}
 .summary-item .value{font-weight:500;font-size:1.6rem}
+.mode-radio-group{display:flex;flex-direction:column;gap:.4rem;align-items:flex-start}
+.radio-label{display:inline-flex;align-items:center;gap:.5rem;font-size:.8rem;font-weight:500;color:var(--text-on-accent);cursor:pointer;white-space:nowrap;user-select:none}
+.radio-label input[type="radio"]{width:15px;height:15px;accent-color:#ffffff;cursor:pointer;margin:0}
+.manual-input{background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.35);color:var(--text-on-accent);border-radius:1rem;padding:.4rem .8rem;width:210px;font-family:inherit;font-size:1.6rem;font-weight:500;text-align:center}
+.manual-input:disabled{opacity:.7;cursor:not-allowed}
 .actual-effect-panel{background:var(--bg-card);border:2px solid var(--accent-secondary);border-radius:2rem;padding:.8rem 1.5rem;margin-bottom:1.5rem;display:inline-flex;align-items:center;gap:1rem;flex-wrap:wrap}
+.actual-effect-panel label{font-weight:700;font-size:1rem;color:var(--text-primary);display:flex;align-items:center;gap:.5rem}
 .actual-effect-panel input{background:var(--bg-surface);border:1px solid var(--border-subtle);border-radius:1rem;padding:.5rem .9rem;width:130px;font-family:monospace}
 .analysis-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1.8rem;margin-top:1rem}
 .analysis-grid-full{display:grid;grid-template-columns:1fr;gap:1.8rem;margin-top:1rem}
 .analysis-chart-container{background:var(--bg-card);border-radius:1.5rem;padding:1rem;border:1px solid var(--border-subtle)}
 footer{font-size:.7rem;text-align:center;padding:1rem;border-top:1px solid var(--border-subtle);color:var(--text-secondary);background:var(--bg-surface)}
 @media(max-width:1000px){.form-grid,.analysis-grid{grid-template-columns:1fr}}
-@media(max-width:800px){.capex-row,.split-row{flex-direction:column;align-items:flex-start}.header-actions{margin-left:.5rem}}
+@media(max-width:800px){.capex-row,.split-row{flex-direction:column;align-items:flex-start}.header-actions{margin-left:.5rem}.effects-header{justify-content:center}}
 </style>
 </head>
 <body>
@@ -136,11 +142,11 @@ footer{font-size:.7rem;text-align:center;padding:1rem;border-top:1px solid var(-
         <div class="param-block-title"><i class="bi bi-clock-history"></i> Временные параметры</div>
         <div class="param-block-grid">
           <div class="param-card"><div class="card-title">Год приведения денежных потоков</div><div class="input-row"><input type="number" id="base_year" value="2026"></div></div>
+          <div class="param-card"><div class="card-title">Год начала проекта</div><div class="input-row"><input type="number" id="project_start_year" value="2026"></div></div>
           <div class="param-card"><div class="card-title">Расчетный период (лет)</div><div class="input-row"><input type="number" id="calc_period" value="25"></div></div>
           <div class="param-card"><div class="card-title">Срок полезного использования (лет)</div><div class="input-row"><input type="number" id="useful_life" value="10"></div></div>
         </div>
         <div style="margin-top:1rem;font-size:.9rem;color:var(--text-secondary)">
-          Год начала проекта: <strong id="project_start_display">2026</strong> &nbsp;|&nbsp;
           Год старта эффектов: <strong id="benefit_start_display">—</strong>
         </div>
       </div>
@@ -160,7 +166,18 @@ footer{font-size:.7rem;text-align:center;padding:1rem;border-top:1px solid var(-
     <div class="effects-header">
       <div class="summary-module">
         <div class="summary-item"><span class="value" id="totalEffectRub">0</span><span>рублей</span></div>
-        <div class="summary-item"><span class="value">ежегодно</span></div>
+        <div class="summary-item"><span>ежегодно</span></div>
+      </div>
+
+      <div class="summary-module">
+        <div class="summary-item mode-radio-group">
+          <label class="radio-label"><input type="radio" name="effect_mode" value="total" checked> Суммарный эффект</label>
+          <label class="radio-label"><input type="radio" name="effect_mode" value="manual"> Ввести самостоятельно</label>
+        </div>
+        <div class="summary-item">
+          <input type="text" inputmode="numeric" id="annual_effect_value" class="manual-input" disabled>
+          <span>рублей ежегодно</span>
+        </div>
       </div>
     </div>
 
@@ -323,6 +340,7 @@ footer{font-size:.7rem;text-align:center;padding:1rem;border-top:1px solid var(-
 
 <script>
 let capexYears = [];
+let capexStartYear = 2026;
 let amortChart = null, propTaxChart = null;
 let netChart = null, cumChart = null, operChart = null, invChart = null;
 
@@ -355,7 +373,7 @@ function setText(id, text) {
 function getVal(id, fallback = 0) {
   const el = document.getElementById(id);
   if (!el) return fallback;
-  const n = parseFloat(el.value);
+  const n = parseFloat(String(el.value).replace(/\s/g, ''));
   return isFinite(n) ? n : fallback;
 }
 
@@ -364,12 +382,18 @@ function getText(id) {
   return el ? el.value : '';
 }
 
+function getStartYear() {
+  const el = document.getElementById('project_start_year');
+  const v = el ? Math.round(parseFloat(el.value)) : NaN;
+  return isFinite(v) ? v : 2026;
+}
+
 function getProjectStart() {
   for (let i = 0; i < capexYears.length; i++) {
     const c = capexYears[i];
     if (c.capex_without !== 0 || c.capex_with !== 0 || c.rnd !== 0) return c.year;
   }
-  return capexYears.length ? capexYears[0].year : 2026;
+  return capexYears.length ? capexYears[0].year : getStartYear();
 }
 
 function getBenefitStart() {
@@ -385,7 +409,7 @@ function getBenefitStart() {
     }
   }
 
-  if (benefitStart === null) benefitStart = capexYears.length ? capexYears[capexYears.length - 1].year : 2026;
+  if (benefitStart === null) benefitStart = capexYears.length ? capexYears[capexYears.length - 1].year : getStartYear();
   return benefitStart;
 }
 
@@ -397,35 +421,35 @@ function getDisplayCapexValues(idx) {
 }
 
 function buildCapexYears(preserve = false) {
-  const startYear = 2026;
+  const startYear = getStartYear();
   const calcPeriod = Math.max(1, getVal('calc_period', 25));
-  const maxYear = Math.max(2032, startYear + calcPeriod + 5);
+  const maxYear = Math.max(startYear + 6, startYear + calcPeriod + 5);
 
   const oldMap = new Map(capexYears.map(c => [c.year, c]));
+  const delta = startYear - capexStartYear;
   const next = [];
 
   for (let y = startYear; y <= maxYear; y++) {
-    if (preserve && oldMap.has(y)) {
-      const old = oldMap.get(y);
+    if (preserve && oldMap.has(y - delta)) {
+      const old = oldMap.get(y - delta);
       next.push({
         year: y,
         capex_without: old.capex_without || 0,
         capex_with: old.capex_with || 0,
         rnd: old.rnd || 0
       });
-    } else if (!preserve && CAPEX_DEFAULTS[y]) {
-      next.push({
-        year: y,
-        capex_without: CAPEX_DEFAULTS[y].capex_without,
-        capex_with: CAPEX_DEFAULTS[y].capex_with,
-        rnd: CAPEX_DEFAULTS[y].rnd
-      });
     } else {
-      next.push({ year: y, capex_without: 0, capex_with: 0, rnd: 0 });
+      const def = CAPEX_DEFAULTS[2026 + (y - startYear)];
+      if (!preserve && def) {
+        next.push({ year: y, capex_without: def.capex_without, capex_with: def.capex_with, rnd: def.rnd });
+      } else {
+        next.push({ year: y, capex_without: 0, capex_with: 0, rnd: 0 });
+      }
     }
   }
 
   capexYears = next;
+  capexStartYear = startYear;
 }
 
 function initCapexYears() {
@@ -507,7 +531,6 @@ function updateCapexReadonlyFields() {
 }
 
 function updateProjectInfo() {
-  setText('project_start_display', getProjectStart());
   setText('benefit_start_display', getBenefitStart());
 }
 
@@ -542,10 +565,34 @@ function computeEffects() {
   return { obs, topo, tech, com, supply, acc, nvos, royalty, opexChange: opex };
 }
 
+function sumEffects(e) {
+  return e.obs + e.topo + e.tech + e.com + e.supply + e.acc + e.nvos + e.royalty + e.opexChange;
+}
+
+function getEffectMode() {
+  const checked = document.querySelector('input[name="effect_mode"]:checked');
+  return checked ? checked.value : 'total';
+}
+
+function getAnnualBenefitRub() {
+  if (getEffectMode() === 'manual') return getVal('annual_effect_value', 0);
+  return sumEffects(computeEffects());
+}
+
+function syncAnnualEffectInput() {
+  const inp = document.getElementById('annual_effect_value');
+  if (!inp) return;
+  const manual = getEffectMode() === 'manual';
+  inp.disabled = !manual;
+  if (!manual) {
+    inp.value = formatNumberWithSpaces(Math.round(sumEffects(computeEffects())), 0);
+  }
+}
+
 function updateSummary() {
-  const effects = computeEffects();
-  const totalRub = effects.obs + effects.topo + effects.tech + effects.com + effects.supply + effects.acc + effects.nvos + effects.royalty + effects.opexChange;
+  const totalRub = sumEffects(computeEffects());
   setText('totalEffectRub', formatNumberWithSpaces(totalRub, 0));
+  syncAnnualEffectInput();
   return totalRub;
 }
 
@@ -709,38 +756,48 @@ function updatePropTax() {
 function calcIRR(netFlows) {
   if (!netFlows || netFlows.length < 2) return null;
 
-  const hasPos = netFlows.some(x => x > 1e-12);
-  const hasNeg = netFlows.some(x => x < -1e-12);
+  let hasPos = false, hasNeg = false;
+  for (const x of netFlows) {
+    if (x > 1e-12) hasPos = true;
+    if (x < -1e-12) hasNeg = true;
+  }
   if (!hasPos || !hasNeg) return null;
 
-  const npv = r => netFlows.reduce((s, cf, t) => s + cf / Math.pow(1 + r, t), 0);
-
-  let lo = -0.9999, hi = 10;
-  let fLo = npv(lo), fHi = npv(hi);
-
-  if (!isFinite(fLo) || !isFinite(fHi)) return null;
-  if (Math.abs(fLo) < 1e-7) return lo;
-  if (Math.abs(fHi) < 1e-7) return hi;
-
-  if (fLo * fHi > 0) return null;
-
-  for (let i = 0; i < 100; i++) {
-    const mid = (lo + hi) / 2;
-    const fMid = npv(mid);
-
-    if (!isFinite(fMid)) break;
-    if (Math.abs(fMid) < 1e-7) return mid;
-
-    if (fLo * fMid <= 0) {
-      hi = mid;
-      fHi = fMid;
-    } else {
-      lo = mid;
-      fLo = fMid;
+  const npv = r => {
+    let s = 0;
+    for (let t = 0; t < netFlows.length; t++) {
+      s += netFlows[t] / Math.pow(1 + r, t);
     }
+    return s;
+  };
+
+  const lo0 = -0.99, hi0 = 10;
+  const steps = 2200;
+
+  let prevR = lo0;
+  let prevV = npv(prevR);
+
+  for (let i = 1; i <= steps; i++) {
+    const r = lo0 + ((hi0 - lo0) * i) / steps;
+    const v = npv(r);
+
+    if (isFinite(prevV) && isFinite(v) && prevV * v <= 0 && (prevV !== 0 || v !== 0)) {
+      let lo = prevR, hi = r, fLo = prevV;
+      for (let k = 0; k < 100; k++) {
+        const mid = (lo + hi) / 2;
+        const fm = npv(mid);
+        if (!isFinite(fm)) break;
+        if (Math.abs(fm) < 1e-9) return mid;
+        if (fLo * fm <= 0) { hi = mid; } else { lo = mid; fLo = fm; }
+      }
+      return (lo + hi) / 2;
+    }
+
+    prevR = r;
+    prevV = v;
   }
 
-  return (lo + hi) / 2;
+  return null;
 }
 
 function calculateCashFlows() {
@@ -749,7 +806,8 @@ function calculateCashFlows() {
   }
 
   const effects = computeEffects();
-  const annualBenefitRub = effects.obs + effects.topo + effects.tech + effects.com + effects.supply + effects.acc + effects.nvos + effects.royalty + effects.opexChange;
+  const totalEffectsRub = sumEffects(effects);
+  const annualBenefitRub = (getEffectMode() === 'manual') ? getVal('annual_effect_value', 0) : totalEffectsRub;
   const annualBenefit = annualBenefitRub / 1e6;
 
   const profitTax = getVal('profit_tax_rate', 25) / 100;
@@ -829,7 +887,6 @@ function calculateCashFlows() {
   const npv = cashflows.length ? cashflows[cashflows.length - 1].disc : 0;
 
   const irrRaw = calcIRR(cashflows.map(x => x.net));
-  // ВНД не показываем, если ЧДД отрицательный
   const irrStr = (irrRaw === null || npv < -1e-9) ? null : (irrRaw * 100).toFixed(2);
 
   let discPayYear = null;
@@ -960,10 +1017,7 @@ function updateAnalysisCharts(cashflows, discFlows, discPayYear) {
 
   cumChart = makeChart('cumDiscountedChart', {
     type: 'line',
-    data: {
-      labels: years,
-      datasets: cumDatasets
-    },
+    data: { labels: years, datasets: cumDatasets },
     options: {
       responsive: true,
       plugins: { legend: { labels: { color: clr.text } } },
@@ -1032,13 +1086,15 @@ function exportToExcel() {
       ['Оборудование "с проектом"', getText('equipment_with')],
       ['Оборудование "без проекта"', getText('equipment_without')],
       ['Год приведения денежных потоков', getVal('base_year', 2026)],
-      ['Год начала проекта', getProjectStart()],
+      ['Год начала проекта', getStartYear()],
       ['Год старта эффектов', getBenefitStart()],
       ['Расчетный период, лет', getVal('calc_period', 25)],
       ['Срок полезного использования, лет', getVal('useful_life', 10)],
       ['Норма дисконта, %', getVal('discount_rate', 14)],
       ['Налог на прибыль, %', getVal('profit_tax_rate', 25)],
-      ['Налог на имущество, %', getVal('prop_tax_rate', 0)]
+      ['Налог на имущество, %', getVal('prop_tax_rate', 0)],
+      ['Источник годового эффекта', getEffectMode() === 'manual' ? 'Введен вручную' : 'Суммарный (из эффектов)'],
+      ['Годовой эффект, принятый в расчет, руб', getAnnualBenefitRub()]
     ];
 
     const wsParams = XLSX.utils.aoa_to_sheet(params);
@@ -1046,7 +1102,7 @@ function exportToExcel() {
     XLSX.utils.book_append_sheet(wb, wsParams, 'Параметры');
 
     const effects = computeEffects();
-    const totalAnnualRub = effects.obs + effects.topo + effects.tech + effects.com + effects.supply + effects.acc + effects.nvos + effects.royalty + effects.opexChange;
+    const totalAnnualRub = sumEffects(effects);
 
     const wsEffects = XLSX.utils.aoa_to_sheet([
       ['Показатель', 'Значение (руб)', 'Значение (млн руб)'],
@@ -1059,10 +1115,11 @@ function exportToExcel() {
       ['1.7 НВОС', effects.nvos, effects.nvos / 1e6],
       ['1.8 Роялти', effects.royalty, effects.royalty / 1e6],
       ['2 Экспл. затраты', effects.opexChange, effects.opexChange / 1e6],
-      ['ИТОГО', totalAnnualRub, totalAnnualRub / 1e6]
+      ['ИТОГО (суммарный эффект)', totalAnnualRub, totalAnnualRub / 1e6],
+      ['Принято в расчет (годовой эффект)', getAnnualBenefitRub(), getAnnualBenefitRub() / 1e6]
     ]);
 
-    wsEffects['!cols'] = [{ wch: 30 }, { wch: 20 }, { wch: 20 }];
+    wsEffects['!cols'] = [{ wch: 32 }, { wch: 20 }, { wch: 20 }];
     XLSX.utils.book_append_sheet(wb, wsEffects, 'Эффекты');
 
     const capexAOA = [['Год', 'КВ без', 'КВ с', 'НИОКР', 'Изменение КВ']];
@@ -1116,6 +1173,9 @@ function resetAllInputs() {
   document.querySelectorAll('input[type="number"]').forEach(inp => {
     inp.value = 0;
   });
+
+  const defaultRadio = document.querySelector('input[name="effect_mode"][value="total"]');
+  if (defaultRadio) defaultRadio.checked = true;
 
   capexYears = capexYears.map(c => ({
     year: c.year,
@@ -1230,12 +1290,38 @@ function bindEvents() {
   const exportBtn = document.getElementById('exportExcelBtn');
   if (exportBtn) exportBtn.addEventListener('click', exportToExcel);
 
+  document.querySelectorAll('input[name="effect_mode"]').forEach(radio => {
+    radio.addEventListener('change', () => {
+      const inp = document.getElementById('annual_effect_value');
+      if (getEffectMode() === 'manual' && inp) {
+        inp.disabled = false;
+        if (!inp.value || getVal('annual_effect_value') === 0) {
+          inp.value = formatNumberWithSpaces(Math.round(sumEffects(computeEffects())), 0);
+        }
+      } else if (inp) {
+        inp.disabled = true;
+        inp.value = formatNumberWithSpaces(Math.round(sumEffects(computeEffects())), 0);
+      }
+      safeRefresh();
+    });
+  });
+
+  const annualEffectEl = document.getElementById('annual_effect_value');
+  if (annualEffectEl) {
+    annualEffectEl.addEventListener('input', () => {
+      if (getEffectMode() !== 'manual') return;
+      const digits = annualEffectEl.value.replace(/[^\d]/g, '').replace(/^0+(?=\d)/, '');
+      annualEffectEl.value = digits ? formatNumberWithSpaces(Number(digits), 0) : '';
+      safeRefresh();
+    });
+  }
+
   const addCapexBtn = document.getElementById('addCapexYearBtn');
   const removeCapexBtn = document.getElementById('removeLastCapexBtn');
 
   if (addCapexBtn) {
     addCapexBtn.addEventListener('click', () => {
-      const lastYear = capexYears.length ? capexYears[capexYears.length - 1].year + 1 : 2026;
+      const lastYear = capexYears.length ? capexYears[capexYears.length - 1].year + 1 : getStartYear();
       capexYears.push({ year: lastYear, capex_without: 0, capex_with: 0, rnd: 0 });
       renderCapexForm();
       safeRefresh();
@@ -1250,12 +1336,15 @@ function bindEvents() {
     });
   }
 
-  ['base_year', 'calc_period', 'useful_life', 'discount_rate', 'profit_tax_rate', 'prop_tax_rate'].forEach(id => {
+  ['base_year', 'project_start_year', 'calc_period', 'useful_life', 'discount_rate', 'profit_tax_rate', 'prop_tax_rate'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
 
     el.addEventListener('change', () => {
-      if (id === 'calc_period' || id === 'useful_life') {
+      if (id === 'project_start_year') {
+        buildCapexYears(true);
+        renderCapexForm();
+      } else if (id === 'calc_period' || id === 'useful_life') {
         refreshCapexRange();
       }
       safeRefresh();
@@ -1273,7 +1362,7 @@ function bindEvents() {
     });
   }
 
-  document.querySelectorAll('#tab_effects input:not([readonly])').forEach(inp => {
+  document.querySelectorAll('#tab_effects input:not([readonly]):not(.manual-input)').forEach(inp => {
     inp.addEventListener('input', () => {
       try {
         computeEffects();
